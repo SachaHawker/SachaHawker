@@ -1,3 +1,8 @@
+USE ROLE RL_PROD_MARKETING_ANALYTICS;
+USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
+USE DATABASE CUSTOMER_ANALYTICS;
+USE SCHEMA TD_REPORTING;
+
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
 create or replace table td_date_and_campaign_map_SH as
                       select a.fin_year,
@@ -121,6 +126,8 @@ inner join (select distinct         campaignname,
 where pl.payment_type_code = '003'
 group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18;
 
+select * from TD10_Redemption1 where ec_id = '50000011716472';
+
 -- add on week start and end to fuel week redemptions
 create or replace table TD10_Redemption2 as
 select a.*, b.fin_week, b.week_start, b.week_end
@@ -141,37 +148,6 @@ where ec_id in (select ec_id from TD10_2122_Petrol_DM where target_control_flag 
 Select count(*) from TD10_Redemption3;
 -- 9,044 - Redeemers in total (may have some from other campaigns- reuse barcodes)
 
-
--- Redeemers where redemption is after print date, excluding those from other campaigns
-create or replace table TD10_Redemption4 as
-select a.ec_id,
-       a.print_qty,
-       b.redeem_qty,
-       a.print_date,
-       b.red_date,
-       c.threshold,
-       c.segment,
-       b.Payment_value,
-       b.fin_week
-from (select ec_id,
-             sum(print_qty) as print_qty,
-             min(transaction_date) as print_date
-from TD10_Prints3 group by 1) as a
-left join (select ec_id,
-                  sum(redeem_qty) as redeem_qty,
-                  min(transaction_date) as red_date,
-                  Sum(payment_value) as Payment_value,
-                  fin_week
-from TD10_Redemption3 group by 1,5) as b on a.ec_id = b.ec_id
-Left join TD10_2122_Petrol_DM as c
-on a.ec_id = c.ec_id
-where red_date > print_date;
-
-select count (*) from TD10_Redemption4 where redeem_qty > 1
--- 3497- the total Redeemers just for this campaign
--- 3474 people redeem once
--- 23 people redeem twice
--- 3520 -- total redemptions
 
 
 -- Create prints of the fuel week
@@ -204,6 +180,7 @@ select * from TD10_Prints2
 -- total prints 10,229 - this includes mal redeemers
 
 
+
 -- only prints from people that are in selection file
 Create or replace table TD10_Prints3 as
     Select * from TD10_Prints2
@@ -211,11 +188,64 @@ where EC_ID in (select ec_id from TD10_2122_Petrol_DM where target_control_flag 
 Select * from TD10_Prints3;
 --7,053 - prints from only those in selection file
 
+create or replace table TD10_Prints4 as
+    select a.*,
+           b.fin_week,
+           b.week_start,
+           b.week_end
+    from TD10_Prints3 as a
+left join td_date_map as b
+where a.transaction_date between b.week_start and b.week_end;
+
+select * from TD10_Prints4;
 
 
 
+create or replace table TD10_Redemption2 as
+select a.*, b.fin_week, b.week_start, b.week_end
+from TD10_Redemption1 as a
+left join TD_date_map as b
+where a.transaction_date between b.week_start and b.week_end;
+select * from TD10_Redemption2;
 
 
+
+-- Redeemers where redemption is after print date, excluding those from other campaigns
+create or replace table TD10_Redemption4 as
+select a.ec_id,
+       a.print_qty,
+       b.redeem_qty,
+       a.print_date,
+       b.red_date,
+       case when b.red_date < a.print_date then 1 else 0 end as unrelated_redemption_flag,
+       c.threshold,
+       c.segment,
+       b.Payment_value,
+       a.fin_week
+from (select ec_id,
+             sum(print_qty) as print_qty,
+             min(transaction_date) as print_date,
+             fin_week
+from TD10_Prints4 group by 1,4) as a
+left join (select ec_id,
+                  redeem_qty as redeem_qty,
+                  transaction_date as red_date,
+                  payment_value as Payment_value
+from TD10_Redemption3) as b on a.ec_id = b.ec_id
+Left join TD10_2122_Petrol_DM as c
+on a.ec_id = c.ec_id
+where unrelated_redemption_flag = 0;
+
+select * from TD10_Redemption4;
+
+select fin_week, print_qty, count (distinct ec_id), count (*) from TD10_Redemption4 group by 1,2;
+
+
+select ec_id, count (*) from TD10_Redemption4 where fin_week = 202145 and print_qty = 1 group by 1 having count(*) >1;
+
+--50000011716472
+
+select * from TD10_Redemption4 where ec_id = '50000011716472';
 
 -- MONEY OFF WEEKS
 create or replace temp table MO_Payment as
@@ -291,7 +321,7 @@ where a.transaction_date between b.week_start and b.week_end;
 select * from TD10_MO_Redemptions3;
 
 
--- Redemptions for just Money off weeks in the selection file (could include redemptions from other campaigns)
+-- Redemptions for just Money off weeks/ just fuel weeks in the selection file (change (not) like spet)
 create or replace table TD10_MO_Redemptions4 as
 select a.ec_id,
        sum(a.redeem_qty) as redeem_qty,
@@ -304,13 +334,29 @@ select a.ec_id,
 From TD10_MO_Redemptions3 as a
 Left join TD10_2122_Petrol_DM as b
 on a.ec_id = b.ec_id
-where offer_cell not like 'SPET%'
+where offer_cell like 'SPET%'
 Group by 1,5,6,7,8;
+select * from TD10_MO_Redemptions4;
 
 -- find how many is reedeming once or more than once
 select * from TD10_MO_Redemptions4;
-Select count(*) from TD10_MO_Redemptions4 where redeem_qty >= 2;
+Select fin_week, redeem_qty, count (distinct ec_id), count (*) from TD10_MO_Redemptions4 group by 1,2;
 -- 22,280 total redeemers for this campaign
 -- 22,276 redeemed once
 -- 4 redeemed more than once (twice)
 
+
+-- 6,887 redeemed fuel week DM
+-- 7,053 prints of fuel CAT
+
+-- Create table of those that have printed CAT and redeemed fuel DM
+Create or replace temp table print_DM as
+    select a.fin_week as print_fin_week,
+           b.fin_week as redeem_fin_week,
+           sum(a.print_qty) as prints,
+           sum(b.redeem_qty) as DM_redemption
+    from TD10_Redemption4 as a
+left join TD10_MO_Redemptions4 as b
+    on a.ec_id = b.ec_id
+    group by 1,2;
+select distinct * from print_DM;
