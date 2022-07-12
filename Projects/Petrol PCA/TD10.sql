@@ -1,3 +1,8 @@
+USE ROLE RL_PROD_MARKETING_ANALYTICS;
+USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
+USE DATABASE CUSTOMER_ANALYTICS;
+USE SCHEMA TD_REPORTING;
+
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
 create or replace table td_date_and_campaign_map_SH as
                       select a.fin_year,
@@ -142,37 +147,6 @@ Select count(*) from TD10_Redemption3;
 -- 9,044 - Redeemers in total (may have some from other campaigns- reuse barcodes)
 
 
--- Redeemers where redemption is after print date, excluding those from other campaigns
-create or replace table TD10_Redemption4 as
-select a.ec_id,
-       a.print_qty,
-       b.redeem_qty,
-       a.print_date,
-       b.red_date,
-       c.threshold,
-       c.segment,
-       b.Payment_value,
-       b.fin_week
-from (select ec_id,
-             sum(print_qty) as print_qty,
-             min(transaction_date) as print_date
-from TD10_Prints3 group by 1) as a
-left join (select ec_id,
-                  sum(redeem_qty) as redeem_qty,
-                  min(transaction_date) as red_date,
-                  Sum(payment_value) as Payment_value,
-                  fin_week
-from TD10_Redemption3 group by 1,5) as b on a.ec_id = b.ec_id
-Left join TD10_2122_Petrol_DM as c
-on a.ec_id = c.ec_id
-where red_date > print_date;
-
-select count (*) from TD10_Redemption4 where redeem_qty > 1
--- 3497- the total Redeemers just for this campaign
--- 3474 people redeem once
--- 23 people redeem twice
--- 3520 -- total redemptions
-
 
 -- Create prints of the fuel week
 create or replace table TD10_Prints1 as
@@ -213,9 +187,49 @@ Select * from TD10_Prints3;
 
 
 
+-- Redeemers where redemption is after print date, excluding those from other campaigns
+create or replace table TD10_Redemption4 as
+select a.ec_id,
+       a.print_qty,
+       b.redeem_qty,
+       a.print_date,
+       b.red_date,
+       case when b.red_date < a.print_date then 1 else 0 end as unrelated_redemption_flag,
+       c.threshold,
+       c.segment,
+       b.Payment_value,
+       b.fin_week
+from (select ec_id,
+             sum(print_qty) as print_qty,
+             min(transaction_date) as print_date
+from TD10_Prints3 group by 1) as a
+left join (select ec_id,
+                  redeem_qty as redeem_qty,
+                  transaction_date as red_date,
+                  payment_value as Payment_value,
+                  fin_week
+from TD10_Redemption3) as b on a.ec_id = b.ec_id
+Left join TD10_2122_Petrol_DM as c
+on a.ec_id = c.ec_id
+where unrelated_redemption_flag = 0;
+
+select fin_week, print_qty, count (*) from TD10_Redemption4 group by 1,2;
 
 
 
+
+
+Create or replace temp table print_DM as
+    select a.fin_week,
+           sum(a.print_qty) as prints,
+           sum(b.redeem_qty) as DM_redemption
+    from TD10_Redemption4 as a
+left join TD10_MO_Redemptions4 as b
+    group by 1;
+select * from print_DM;
+
+
+fin week, sum(print_qty), sum(DM redeem_qty)
 
 -- MONEY OFF WEEKS
 create or replace temp table MO_Payment as
@@ -291,7 +305,7 @@ where a.transaction_date between b.week_start and b.week_end;
 select * from TD10_MO_Redemptions3;
 
 
--- Redemptions for just Money off weeks in the selection file (could include redemptions from other campaigns)
+-- Redemptions for just Money off weeks in the selection file
 create or replace table TD10_MO_Redemptions4 as
 select a.ec_id,
        sum(a.redeem_qty) as redeem_qty,
@@ -304,13 +318,20 @@ select a.ec_id,
 From TD10_MO_Redemptions3 as a
 Left join TD10_2122_Petrol_DM as b
 on a.ec_id = b.ec_id
-where offer_cell not like 'SPET%'
+where offer_cell like 'SPET%'
 Group by 1,5,6,7,8;
 
 -- find how many is reedeming once or more than once
 select * from TD10_MO_Redemptions4;
-Select count(*) from TD10_MO_Redemptions4 where redeem_qty >= 2;
+Select fin_week, redeem_qty, count(*) from TD10_MO_Redemptions4 group by 1,2;
 -- 22,280 total redeemers for this campaign
 -- 22,276 redeemed once
 -- 4 redeemed more than once (twice)
+
+-- he MO table actually contains the fuel DM redemptions -
+-- we can see some have the 15P offercode and some have the SPET offer code.
+-- So this would be a way to answer the question - does everyone redeeming the fuel week DM get the petrol CAT print
+
+-- 6,887 redeemed fuel week DM
+-- 7,053 prints of fuel CAT
 
