@@ -3,6 +3,8 @@ USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
 USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
+
+
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
 create or replace table td_date_and_campaign_map_SH as
                       select a.fin_year,
@@ -370,6 +372,7 @@ select * from TD10_Redemptions3;
 -- Redemptions for just fuel weeks in the selection file
 create or replace table TD10_Fuel_DM_Redemptions as
 select a.ec_id,
+       a.sr_id,
        a.redeem_qty,
        min(a.transaction_date) as red_date,
        a.transaction_value,
@@ -383,7 +386,7 @@ From TD10_Redemptions3 as a
 Left join TD10_2122_Petrol_DM as b
 on a.ec_id = b.ec_id
 where offer_cell  like 'SPET%'
-Group by 1,2,4,5,6,7,8,9,10;
+Group by 1,2,3,5,6,7,8,9,10,11;
 
 -- redemptions just for MO weeks
 create or replace table TD10_MO_DM_Redemptions as
@@ -406,8 +409,6 @@ Select * from TD10_MO_DM_Redemptions
 -- 22284
 
 
-select * from TD10_Redemption4  where ec_id = '50000020856112';
-select * from TD10_Fuel_DM_Redemptions where ec_id = '50000020856112';
 -- DM REDEMPTIONS
 --2022-01-29 -- 13:07:00
 --2022-01-15-- 05:01:43
@@ -430,26 +431,32 @@ select  b.ec_id,
        c.threshold,
        c.segment,
        b.transaction_value,
-       b.fin_week
+       b.fin_week,
+b. sr_id
 from TD10_Fuel_DM_Redemptions as b
 Left join TD10_2122_Petrol_DM as c
 on b.ec_id = c.ec_id
 select * from TD10_Fuel_DM_Redemptions1;
 -- 6,892
 
+select distinct ec_id, sum(redeem_qty) as vol from TD10_Fuel_DM_Redemptions1 group by 1 having vol > 1 ;
+-- 895 with more than 1 Dm redemption
+
 -- customer level
-create or replace temp table TD10_Fuel_DM_Redemptions2 as
+create or replace table TD10_Fuel_DM_Redemptions2 as
     select distinct ec_id,
            threshold,
            segment,
-           sum(redeem_qty) as redeem_qty
+           sum(redeem_qty) as redeem_qty,
+        sr_id
 from TD10_Fuel_DM_Redemptions1
-group by 1,2,3;
+group by 1,2,3,5;
 
-select * from TD10_Fuel_DM_Redemptions2 where redeem_qty >1
--- 893
+select * from TD10_Fuel_DM_Redemptions2;
+
 
 select count (distinct ec_id), redeem_qty from TD10_Fuel_DM_Redemptions2 where redeem_qty >1 group by 2;
+-- 892 with 2 redemptions
 
 
 
@@ -515,8 +522,6 @@ select * from TD_REPORTING.TD10_Redemption4
 -- CAT redemptions - 5,496
 
 
-
-
 create or replace table Redemption_print_summary as
 select
     coalesce(a.ec_id, b.ec_id) as ec_id,
@@ -537,28 +542,6 @@ select CAT_redemptions, count (ec_id) from TD_REPORTING.Redemption_print_summary
 -- 7090
 
 
--- select * from TD_REPORTING.Redemption_print_summary where print_qty = 4;
--- -- 50000020856112
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-)
-
-
 -- find how many is reedeming once or more than once
 select * from TD10_MO_Redemptions4;
 Select fin_week, redeem_qty, count (distinct ec_id), count (*) from TD10_MO_Redemptions4 group by 1,2;
@@ -567,24 +550,34 @@ Select fin_week, redeem_qty, count (distinct ec_id), count (*) from TD10_MO_Rede
 
 
 
-create or replace temp table summary_petrol as
-Select distinct a.ec_id, a.number_of_prints, b.Number_of_CAT_redemptions, c.Number_of_DM_redemptions
+create or replace table summary_petrol as
+Select distinct a.ec_id,a.sr_id, a.number_of_prints, b.Number_of_CAT_redemptions, c.Number_of_DM_redemptions
 From
-     (Select ec_id, Count(*) number_of_prints
+     (Select ec_id, sr_id, Count(*) number_of_prints
       From TD10_Prints4
-    Group by ec_id
+    Group by 1,2
      ) a
 Left join
-     (select ec_id, Count(*) Number_of_CAT_redemptions
+     (select ec_id, sr_id, Count(*) Number_of_CAT_redemptions
       from TD10_CAT_Redemption3
-      group by ec_id
-     ) b on a.ec_id = b.ec_id
+      group by 1,2
+     ) b on a.ec_id = b.ec_id and a.sr_id=b.sr_id
 left join
-         (select ec_id, count (*) Number_of_DM_redemptions
+         (select ec_id, sr_id, count (*),
+             sum(redeem_qty) as Number_of_DM_redemptions
              from TD10_Fuel_DM_Redemptions2
-             group by ec_id
-             ) c on a.ec_id = b.ec_id;
+             group by 1,2
+             ) c on a.ec_id = c.ec_id and a.sr_id=c.sr_id;
 
-select count (ec_id) as volume, Number_of_CAT_redemptions from summary_petrol group by 2;
+select count(substr(sr_id,3))as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol where number_of_prints > number_of_DM_Redemptions group by 2,3;
+select substr(sr_id,3) as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol where number_of_prints > number_of_DM_Redemptions group by 1,2,3;
+select substr(sr_id,3) as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol where number_of_DM_Redemptions is null group by 1,2,3;
+select substr(sr_id,3) as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol where number_of_DM_redemptions is null group by 1,2,3;
+
+-- final summary of prints and DM red
+select count(ec_id) as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol group by 2,3;
+
+Select * from petrol_backup_prints;
+
 
 
