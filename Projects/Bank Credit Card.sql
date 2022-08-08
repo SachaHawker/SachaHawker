@@ -30,8 +30,10 @@ on sha2(cast(a.ec_id as varchar(50)), 256) = b.hashed_loyalty_id;
 
 select count(distinct ec_id) from Card_customers;
 -- those in CC data that are in the ranking file: 129
+
 select count(distinct hashed_loyalty_id) from bank_credit_card;
 -- 744,299
+
 select count(ec_id), segment from Card_customers group by 2;
 -- 38,Regular
 -- 5,SuperFrequent
@@ -47,11 +49,3 @@ select ec_id,
        segment
        from ranking_file;
 
-
-
-select
-sha2(cast(ec_id as varchar(50)), 256) from ranking_file;
-
-select sha2(cast(enterprise_customer_ID as varchar(50)), 256)
-
-Select * from CUSTOMER_ANALYTICS.PRODUCTION.CVU_CUSTOMER_DIM limit 5;
