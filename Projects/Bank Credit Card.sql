@@ -48,4 +48,3 @@ select ec_id,
        sha2(cast(ec_id as varchar(50)), 256) as hashed,
        segment
        from ranking_file;
-
