@@ -605,7 +605,6 @@ select count(ec_id) as volume, fin_week from summary_petrol where number_of_DM_r
 -- no. of CAT redemptions
 select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol group by 2;
 
-
 // Formulas //
 -- red rate = selection vol / redemptions (DM)
 -- red rate = print vol / redemptions (CAT)
