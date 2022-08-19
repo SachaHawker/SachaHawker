@@ -543,7 +543,6 @@ select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol grou
 select distinct (ec_id), count(*) as rowall  from summary_petrol group by 1 ;
 select * from summary_petrol ;
 
-where ec_id = '50000108506881'
 
 Select * from petrol_backup_prints;
 
