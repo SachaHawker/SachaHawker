@@ -64,8 +64,6 @@ on b.hashed_loyalty_ID = sha2(cast(a.party_account_no as varchar(50)), 256)
 -- Matching bank card on customer account: 744,082 -- 217 missing -- deactivated bank/nectar?
 
 
-
-
 select * from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."RANKING_FILE_SR_202221" where segment = 'Missing'; -- last weeks RF (2nd Aug)
 
 select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES limit 50;
