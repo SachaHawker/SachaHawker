@@ -186,20 +186,14 @@ create or replace table TD10_Prints4 as
     select a.*,
            b.fin_week,
            b.week_start,
-           b.week_end
+           b.week_end,
+           c.threshold,
+           c.segment
     from TD10_Prints3 as a
 left join td_date_map as b
+    left join td10_2122_Petrol_DM c
+    on a.ec_id = c.ec_id
 where a.transaction_date between b.week_start and b.week_end;
-
---
--- create or replace table TD10_Redemption2 as
--- select a.*, b.fin_week, b.week_start, b.week_end
--- from TD10_Redemption1 as a
--- left join TD_date_map as b
--- where a.transaction_date between b.week_start and b.week_end;
--- select * from TD10_Redemption2;
-
-
 
 -- Redeemers where redemption is after print date, excluding those from other campaigns
 create or replace table TD10_CAT_Redemption4 as
@@ -226,14 +220,16 @@ Left join TD10_2122_Petrol_DM as c
 on b.ec_id = c.ec_id
 where unrelated_redemption_flag = 0 and redeem_qty is not null;
 
-select * from TD10_CAT_Redemption4; -- customer level
+--5496
+-- customer level
 
 -- Petrol redemptions by week
 select fin_week, count (*) from TD10_CAT_Redemption4 group by 1;
 -- 5496
 
--- total volumes by redemptions
-select  count (*), count (distinct ec_id) from TD10_CAT_Redemption4;
+
+select  count (*), count (distinct ec_id) from TD10_CAT_Redemption4; -- redemptions 5496, redeemers 4597
+
 select count (distinct ec_Id) as volume, redemptions
 from
        (select ec_id, sum(redeem_qty) as redemptions
@@ -241,12 +237,12 @@ from
 group by 2;
 
 
--- customers that have redeemed more than once - use this to see if they are in the next campaigns selection file
-select *
-from
-       (select ec_id, sum(redeem_qty) as redemptions
-           from TD10_Redemption4 group by 1)
-where redemptions > 2;
+-- -- customers that have redeemed more than once - use this to see if they are in the next campaigns selection file
+-- select *
+-- from
+--        (select ec_id, sum(redeem_qty) as redemptions
+--            from TD10_Redemption4 group by 1)
+-- where redemptions > 2;
 
 
 
@@ -380,8 +376,6 @@ select * from TD10_DM_Redemptions1 where redeem_qty >= 2
 --2022-01-15 -- 10:46:42
 
 
-
-
 -- Fuel DM redemptions
 -- transactional level
 create or replace table TD10_Fuel_DM_Redemptions1 as
@@ -408,12 +402,13 @@ create or replace table TD10_Fuel_DM_Redemptions2 as
            threshold,
            segment,
            sum(redeem_qty) as redeem_qty,
-        sr_id,
-                    fin_week
+           sr_id,
+           fin_week
 from TD10_Fuel_DM_Redemptions1
 group by 1,2,3,5,6;
 
-select * from TD10_Fuel_DM_Redemptions2;
+select * from TD10_Fuel_DM_Redemptions2 order by redeem_qty desc;
+-- 6,884
 
 
 select count (distinct ec_id), redeem_qty from TD10_Fuel_DM_Redemptions2 where redeem_qty >1 group by 2;
@@ -422,30 +417,30 @@ select count (distinct ec_id), redeem_qty from TD10_Fuel_DM_Redemptions2 where r
 
 
 
--- Prints
--- transaction level
-create or replace temp table td10_prints5 as
-    select distinct
-    a.*,
-           b.segment,
-           b.threshold
-        from TD10_Prints4  as a
-Left join TD10_2122_Petrol_DM as b
-on a.ec_id = b.ec_id;
--- 7,053
-
--- PRINTS
---customer level
-create or replace temp table TD10_Prints6 as
-    select ec_id,
-           threshold,
-           segment,
-           sum(print_qty) as print_qty
-from td10_prints5
-group by 1,2,3;
-
-Select * from td10_prints6
--- 6,059
+-- -- Prints
+-- -- transaction level
+-- create or replace temp table td10_prints5 as
+--     select distinct
+--     a.*,
+--            b.segment,
+--            b.threshold
+--         from TD10_Prints4  as a
+-- Left join TD10_2122_Petrol_DM as b
+-- on a.ec_id = b.ec_id;
+-- -- 7,053
+--
+-- -- PRINTS
+-- --customer level
+-- create or replace temp table TD10_Prints6 as
+--     select ec_id,
+--            threshold,
+--            segment,
+--            sum(print_qty) as print_qty
+-- from td10_prints5
+-- group by 1,2,3;
+--
+-- Select * from td10_prints6
+-- -- 6,059
 
 
 
@@ -509,7 +504,7 @@ Select fin_week, redeem_qty, count (distinct ec_id), count (*) from TD10_MO_Rede
 
 
 create or replace table summary_petrol as
-Select distinct a.ec_id,a.sr_id, a.number_of_prints, b.Number_of_CAT_redemptions, c.Number_of_DM_redemptions, a.fin_week
+Select a.ec_id,a.sr_id, a.number_of_prints, b.Number_of_CAT_redemptions, c.Number_of_DM_redemptions, a.fin_week as print_week, b.fin_week as CAT_week, c.fin_week as DM_week, d.segment, d.threshold
 From
      (Select ec_id, sr_id, Count(*) number_of_prints, fin_week
       From TD10_Prints4
@@ -519,13 +514,17 @@ Left join
      (select ec_id, sr_id, Count(*) Number_of_CAT_redemptions, fin_week
       from TD10_CAT_Redemption3
       group by 1,2,4
-     ) b on a.ec_id = b.ec_id and a.sr_id=b.sr_id and a.fin_week = b.fin_week
+     ) b on a.ec_id = b.ec_id and a.sr_id=b.sr_id
 left join
          (select ec_id, sr_id, count (*),
              sum(redeem_qty) as Number_of_DM_redemptions, fin_week
              from TD10_Fuel_DM_Redemptions2
              group by 1,2,5
-             ) c on a.ec_id = c.ec_id and a.sr_id=c.sr_id and a.fin_week= c.fin_week;
+             ) c on a.ec_id = c.ec_id and a.sr_id=c.sr_id
+inner join
+         (select ec_id, SR_id, segment, threshold
+from TD10_2122_Petrol_DM
+group by 1,2,3,4) d on a.ec_id = d.ec_id and a.sr_id = d.Sr_id;
 
 -- select count(substr(sr_id,3))as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol where number_of_prints > number_of_DM_Redemptions group by 2,3;
 -- select substr(sr_id,3) as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol where number_of_prints > number_of_DM_Redemptions group by 1,2,3;
@@ -541,9 +540,48 @@ select count(ec_id) as volume, Number_of_DM_redemptions from summary_petrol grou
 -- no. of CAT redemptions
 select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol group by 2;
 
+select distinct (ec_id), count(*) as rowall  from summary_petrol group by 1 ;
+select * from summary_petrol ;
 
+where ec_id = '50000108506881'
 
 Select * from petrol_backup_prints;
+
+-- CAT redemptions at customer level
+select ec_id,Count(*) Number_of_CAT_redemptions, segment, threshold, fin_week
+      from TD10_CAT_Redemption4 group by 1,3,4,5;
+
+
+-- CAT summary table (grouped by week, segment and threshold)
+select Count(distinct ec_id) as vol, segment, threshold,fin_week
+      from TD10_CAT_Redemption4
+      group by 2,3,4;
+
+
+
+-- DM redemptions at customer level
+select ec_id, sr_id, count (*),
+             sum(redeem_qty) as Number_of_DM_redemptions, fin_week, segment, threshold
+             from TD10_Fuel_DM_Redemptions2
+             group by 1,2,5,6,7;
+-- 6884
+
+select Count(distinct ec_id) as vol, fin_week, segment, threshold
+from TD10_Fuel_DM_Redemptions2
+group by 2,3,4;
+--6884
+
+
+-- Prints customer level
+Select ec_id, sr_id, Count(*) number_of_prints, fin_week, segment, threshold
+      From TD10_Prints4
+    Group by 1,2,4,5,6;
+
+-- prints summary
+select Count(distinct ec_id) as vol, fin_week, threshold, segment
+from TD10_Prints4
+group by 2,3,4;
+--6961
 
 
 //QUESTIONS//
@@ -552,7 +590,6 @@ Select * from petrol_backup_prints;
 select count(ec_id) as volume, number_of_prints, Number_of_DM_redemptions from summary_petrol group by 2,3;
 -- no. of prints
 select count(ec_id) as volume, number_of_prints  from summary_petrol group by 2;
-
 
 
 // DM RED //
@@ -566,15 +603,16 @@ select count(ec_id) as volume, fin_week from summary_petrol where number_of_CAT_
 -- Engagement by week (DM Redemptions)
 select count(ec_id) as volume, fin_week from summary_petrol where number_of_DM_redemptions >=1 group by 2
 
-
-red rate:
-redemptions/targeted offers
-
-targetted offers:
-target vol * no. of weeks
-
 -- no. of CAT redemptions
 select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol group by 2;
+
+
+
+red rate = selection vol / redemptions (DM)
+red rate = print vol / redemptions (CAT)
+
+
+
 
 
 
