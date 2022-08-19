@@ -614,4 +614,3 @@ select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol grou
 
 
 
-
