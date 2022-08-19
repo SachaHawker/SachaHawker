@@ -545,6 +545,7 @@ select * from summary_petrol ;
 
 Select * from petrol_backup_prints;
 
+
 -- CAT redemptions at customer level
 select ec_id,Count(*) Number_of_CAT_redemptions, segment, threshold, fin_week
       from TD10_CAT_Redemption4 group by 1,3,4,5;
