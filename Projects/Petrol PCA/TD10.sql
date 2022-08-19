@@ -607,8 +607,8 @@ select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol grou
 
 
 // Formulas //
-red rate = selection vol / redemptions (DM)
-red rate = print vol / redemptions (CAT)
+-- red rate = selection vol / redemptions (DM)
+-- red rate = print vol / redemptions (CAT)
 
 
 
