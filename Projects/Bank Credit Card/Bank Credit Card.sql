@@ -5,65 +5,91 @@ USE SCHEMA TD_REPORTING;
 
 
 //CREATING JOINED TABLES (BANK CUSTOMERS AND RANKING FILE)//
-Create or replace temp table Card_customers_9_8_22_RF as
+// This is only for Gold and Platinum customers with 10k or over points in last 12m //
+Create or replace temp table Card_customers_23_8_22_RF as
     select
            a.party_account_no,
+           a.enterprise_customer_ID,
            a.segment,
-           b.hashed_loyalty_id
+           b.hashed_loyalty_id,
+           b.bank_segment,
+           b.points_flag,
+           a.instore_accounts,
+           c.journey_instore
 from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES as a
-inner join bank_credit_card as b
-on sha2(cast(a.party_account_no as varchar(50)), 256) = b.hashed_loyalty_id;
+inner join "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" as b
+on sha2(cast(a.party_account_no as varchar(50)), 256) = b.hashed_loyalty_id
+    left join TD_REPORTING.TD_EXPERIMENTAL_JOURNEYS as c
+    on a.enterprise_customer_ID = c.enterprise_customer_ID
+where bank_segment in ('GO','PL') and points_flag = '1' and instore_accounts = '1';
 
-Create or replace temp table Card_customers_2_8_22_RF as
-    select
-           a.party_account_no,
-           a.segment,
-           b.hashed_loyalty_id
-from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."RANKING_FILE_SR_202221" as a
-inner join bank_credit_card as b
-on sha2(cast(a.party_account_no as varchar(50)), 256) = b.hashed_loyalty_id;
 
-select count(distinct party_account_no) from Card_customers_9_8_22_RF;
--- those in CC data that are in CURRENT the ranking file: 511,633
-select count(distinct party_account_no) from Card_customers_2_8_22_RF;
--- those in CC data that are in LAST WEEKS ranking file: 511,709
+-- those in bank data that are in CURRENT the ranking file:
+select count(distinct party_account_no) from Card_customers_23_8_22_RF;-- 17937
 
-// BY SEGMENT //
-select count(party_account_no), segment from Card_customers_9_8_22_RF group by 2;
--- 151282,Regular
--- 34097,SuperFrequent
--- 11513,Missing
--- 122479,Infrequent
--- 106808,Frequent
--- 45486,Lapsed
--- 39968,Inactive
 
-select count(party_account_no), segment from Card_customers_2_8_22_RF group by 2;
--- 34599,SuperFrequent
--- 11554,Missing
--- 123141,Infrequent
--- 40145,Inactive
--- 44600,Lapsed
--- 150522,Regular
--- 107148,Frequent
+//// BY SEGMENT // GOLD & PLATNIUM
+
+select count(party_account_no), segment from Card_customers_23_8_22_RF group by 2;
+-- 88,Missing
+-- 703,Infrequent
+-- 175,Inactive
+-- 285,Lapsed
+-- 3985,Regular
+-- 9373,Frequent
+-- 3328,SuperFrequent
+
+select count(party_account_no),journey_instore from Card_customers_23_8_22_RF group by 2;
+-- 324,Reactivate
+-- 1,N/A
+-- 77,Not enough transactions
+-- 309,Stretch & Grow
+-- 1908,Maintain
+-- 15318, Null
 
 
 
-// COUNTS //
+// BY SEGMENT // GOLD
+select count(party_account_no), segment from Card_customers_23_8_22_RF where bank_segment = 'GO' group by 2;
+-- 1642,Regular
+-- 879,SuperFrequent
+-- 34,Missing
+-- 301,Infrequent
+-- 3107,Frequent
+-- 116,Lapsed
+-- 72,Inactive
 
--- Counts in the bank file
-select count(distinct hashed_loyalty_id) from bank_credit_card;
--- 744,299
-
--- counts of bank customers that are in the customer account
-select count(*)
-from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT"  as a
-inner join bank_credit_card as b
-on b.hashed_loyalty_ID = sha2(cast(a.party_account_no as varchar(50)), 256)
-
--- Matching bank card on customer account: 744,082 -- 217 missing -- deactivated bank/nectar?
+// EP Journey //
+select count(party_account_no),journey_instore from Card_customers_23_8_22_RF where bank_segment = 'GO' group by 2;
+--5309, Null
+-- 95,Reactivate
+-- 149,Stretch & Grow
+-- 577,Maintain
+-- 21,Not enough transactions
 
 
+// BY SEGMENT // PLATNIUM
+select count(party_account_no), segment from Card_customers_23_8_22_RF where bank_segment = 'PL' group by 2;
+-- 2449,SuperFrequent
+-- 54,Missing
+-- 402,Infrequent
+-- 103,Inactive
+-- 169,Lapsed
+-- 2343,Regular
+-- 6266,Frequent
+
+select count(party_account_no),journey_instore from Card_customers_23_8_22_RF where bank_segment = 'PL' group by 2;
+-- 160,Stretch & Grow
+-- 10009, Null
+-- 229,Reactivate
+-- 1,N/A
+-- 1331,Maintain
+-- 56,Not enough transactions
 
 
-select * from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."RANKING_FILE_SR_202221"; -- last weeks RF (2nd Aug)
+
+// Tables //
+
+-- select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES limit 50;
+-- select * from  TD_REPORTING.TD_EXPERIMENTAL_JOURNEYS limit 5;
+-- select count(*) from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" where bank_segment in ('GO','PL') and points_flag = 1
