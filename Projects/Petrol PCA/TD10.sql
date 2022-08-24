@@ -445,32 +445,32 @@ select count (distinct ec_id), redeem_qty from TD10_Fuel_DM_Redemptions2 where r
 
 
 
--- Petrol CAT redemptions
-create or replace table TD10_Redemption5 as
-select distinct b.ec_id,
-       b.redeem_qty,
-       b.red_date,
-       case when b.red_date < a.print_date then 1 else 0 end as unrelated_redemption_flag,
-       c.threshold,
-       c.segment,
-       b.Payment_value,
-       b.fin_week
-from (select ec_id,
-             sum(print_qty) as print_qty,
-             min(transaction_date) as print_date,
-             fin_week
-from TD10_Prints4 group by 1,4) as a
-left join (select ec_id,
-                  redeem_qty as redeem_qty,
-                  transaction_date as red_date,
-                  payment_value as Payment_value,
-                  fin_week
-from TD10_CAT_Redemption3) as b on a.ec_id = b.ec_id
-Left join TD10_2122_Petrol_DM as c
-on b.ec_id = c.ec_id
-where unrelated_redemption_flag = 0 and redeem_qty is not null;
-select * from TD_REPORTING.TD10_Redemption4
--- 5,496
+-- -- Petrol CAT redemptions
+-- create or replace table TD10_Redemption5 as
+-- select distinct b.ec_id,
+--        b.redeem_qty,
+--        b.red_date,
+--        case when b.red_date < a.print_date then 1 else 0 end as unrelated_redemption_flag,
+--        c.threshold,
+--        c.segment,
+--        b.Payment_value,
+--        b.fin_week
+-- from (select ec_id,
+--              sum(print_qty) as print_qty,
+--              min(transaction_date) as print_date,
+--              fin_week
+-- from TD10_Prints4 group by 1,4) as a
+-- left join (select ec_id,
+--                   redeem_qty as redeem_qty,
+--                   transaction_date as red_date,
+--                   payment_value as Payment_value,
+--                   fin_week
+-- from TD10_CAT_Redemption3) as b on a.ec_id = b.ec_id
+-- Left join TD10_2122_Petrol_DM as c
+-- on b.ec_id = c.ec_id
+-- where unrelated_redemption_flag = 0 and redeem_qty is not null;
+-- select * from TD_REPORTING.TD10_Redemption4
+-- -- 5,496
 
 
 -- dm fuel redemptions - 6,890
@@ -543,7 +543,7 @@ select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol grou
 select distinct (ec_id), count(*) as rowall  from summary_petrol group by 1 ;
 select * from summary_petrol ;
 
-Select * from petrol_backup_prints;
+
 
 
 -- CAT redemptions at customer level
@@ -563,8 +563,8 @@ select ec_id, sr_id, count (*),
              sum(redeem_qty) as Number_of_DM_redemptions, fin_week, segment, threshold
              from TD10_Fuel_DM_Redemptions2
              group by 1,2,5,6,7;
--- 6884
 
+-- DM summary
 select Count(distinct ec_id) as vol, fin_week, segment, threshold
 from TD10_Fuel_DM_Redemptions2
 group by 2,3,4;
@@ -606,10 +606,13 @@ select count(ec_id) as volume, fin_week from summary_petrol where number_of_DM_r
 select count(ec_id) as volume,Number_of_CAT_redemptions from summary_petrol group by 2;
 
 
-
+// Formulas //
 red rate = selection vol / redemptions (DM)
 red rate = print vol / redemptions (CAT)
 
+// TABLES //
+
+Select * from petrol_backup_prints;
 
 
 
