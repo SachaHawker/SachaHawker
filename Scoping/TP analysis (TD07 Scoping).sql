@@ -338,8 +338,6 @@ from instore_points_TD01
 
 
 
-
-
 -- select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_chrh_campaign_ec limit 5;
 -- select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_fact_ec limit 100;
 -- select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_offer_attribute_ec limit 5;
