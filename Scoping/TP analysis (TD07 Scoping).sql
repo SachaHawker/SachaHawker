@@ -116,7 +116,6 @@ from instore_points_TD04;
 
 
 
-
 // TD02 //
 -- Make my own campaign map
 create or replace temp table td_date_and_campaign_map_TD02 as
