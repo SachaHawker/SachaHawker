@@ -44,7 +44,7 @@ where bank_segment in ('GO','PL') and points_flag = '1';
 --19338 - all bank customers
 
 
---
+
 // WORK OUT WHO IS NOT IN THE RANKING FILE //
 -- not in the ranking file --
 create or replace table Not_in_Ranking_file as
@@ -53,17 +53,6 @@ from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG"
 where hashed_loyalty_ID not in (select hashed_loyalty_id from Card_customers_13_9_22_RF)
 and bank_segment in ('GO', 'PL') and points_flag=1;
 -- 1,084 not in the ranking file
-
-
--- // confirm the above another way - looking at party account types //
--- select distinct  a.hashed_loyalty_id, b. party_account_type_code
--- from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" as a
--- inner join EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES as b
---     on a.hashed_loyalty_id = sha2(cast(b.party_account_no as varchar(50)), 256)
--- where a.bank_segment in ('GO','PL') and a.points_flag = '1'
---     order by party_account_type_code asc;
-
-
 
 //those that have shopped over 26 weeks ago//
 create or replace temp table shopped_over_26weeks as
@@ -76,15 +65,6 @@ on a.hashed_loyalty_id = sha2(cast(substr(c.party_account_id,4,11) as varchar(50
 where transaction_date <= '2022-03-15';
 -- 844 bank people have transactions greater than 26 weeks and therefore not in the ranking file
 
--- create or replace temp table online_transactions as
--- select distinct a.hashed_loyalty_id, b.G_lastorderdate
--- from shopped_over_26weeks as a
--- inner join "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY" b
--- on a.hashed_loyalty_Id = sha2(cast(substr(b.nectar_party_account_id,4,11) as varchar(50)), 256)
--- where G_lastorderdate is not null
--- --533
--- -- so 533 customers have both shopped online and shopped over 26 weeks
--- --311 26 week shoppers
 
 // Find out what are the other customers that are not in RF and not an over 26 week shopper //
 create or replace temp table other_customers as
