@@ -3,6 +3,7 @@ USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
 USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
+
 // STEP 1:  Create ranking file with hashed ID //
 create or replace table Hashed_RF as
     select party_account_no,
@@ -54,6 +55,7 @@ where hashed_loyalty_ID not in (select hashed_loyalty_id from Card_customers_13_
 and bank_segment in ('GO', 'PL') and points_flag=1;
 -- 1,084 not in the ranking file
 
+select count(*) from Not_in_Ranking_file;
 
 -- // confirm the above another way - looking at party account types //
 -- select distinct  a.hashed_loyalty_id, b. party_account_type_code
@@ -76,6 +78,8 @@ on a.hashed_loyalty_id = sha2(cast(substr(c.party_account_id,4,11) as varchar(50
 where transaction_date <= '2022-03-15';
 -- 844 bank people have transactions greater than 26 weeks and therefore not in the ranking file
 
+select count(distinct party_account_no) from shopped_over_26weeks;
+
 -- create or replace temp table online_transactions as
 -- select distinct a.hashed_loyalty_id, b.G_lastorderdate
 -- from shopped_over_26weeks as a
@@ -95,15 +99,47 @@ on a.hashed_loyalty_id = sha2(cast(b.party_account_no as varchar(50)), 256)
 where hashed_loyalty_id not in (select hashed_loyalty_id from shopped_over_26weeks)
 -- 240 not a over 26 week shopper and not in the ranking file
 
+select count(*) from other_customers;
 select * from other_customers;
 
+
+
 // see if the 'other customers' group have shopped at all //
-Select a.hashed_loyalty_id
-from Not_in_Ranking_file as a
-inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT as b
+select b.party_account_no, c.transaction_date, c.party_account_id
+from other_customers a
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT b
 on a.hashed_loyalty_id = sha2(cast(b.party_account_no as varchar(50)), 256)
-where party_account_id in (select party_account_id from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction)
--- the 'other_cusotmers' group haven't shopped at all
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction c
+on b.party_account_id = c.party_account_id
+-- the 'other_customers' group haven't shopped at all
+
+create or replace temp table other_customers_id as
+select b.party_account_id
+from other_customers a
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT b
+on a.hashed_loyalty_id = sha2(cast(b.party_account_no as varchar(50)), 256)
+
+select a.party_account_id, b.transaction_date
+from other_customers_id a
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line b
+on a.party_account_id = b.party_account_id
+// nor are they in the payment line//
+
+
+select b.party_account_id, b.party_account_type_code
+from other_customers a
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT b
+on a.hashed_loyalty_id = sha2(cast(b.party_account_no as varchar(50)), 256)
+order by b.party_account_type_code desc;
+// all are instore shoppers (have 04 party account type code) //
+
+
+select b.party_account_id, b.party_account_type_code
+from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" a
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT b
+where a.bank_segment in ('GO', 'PL') and a.points_flag=1
+order by party_account_type_code desc;
+// all bank customers are 04 party account types (instore)//
 
 
 // check those that not in the ranking file, yet shopped in the last 26 weeks //
