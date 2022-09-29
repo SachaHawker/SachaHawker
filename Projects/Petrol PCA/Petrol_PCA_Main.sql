@@ -3,14 +3,87 @@ USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
 USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
-SET firstdatecampaign = '2022-02-01';
-Set campaignname = '2122_TD10';
-SET petrol_cat_end_date = '2022-02-12';
-SET campaign_start_date = '2022-01-02';
-SET campaign_end_date = '2022-01-30';
-SET td ='TD10';
+
+-- --TD08
+-- Set campaignname = '2122_TD08';
+-- SET campaign_start_date = '2021-10-31';
+-- SET campaign_end_date = '2021-12-04';
+-- SET rolling_date = '2021-12-18';
+-- SET td ='TD08';
+-- SET year ='2122';
+
+--TD09
+Set campaignname = '2122_TD09';
+SET campaign_start_date = '2021-12-05';
+SET campaign_end_date = '2022-01-01';
+SET rolling_date = '2022-01-15';
+SET td ='TD09';
 SET year ='2122';
-SET rolling_date = '2022-02-12';
+
+--TD10
+-- Set campaignname = '2122_TD10';
+-- SET campaign_start_date = '2022-01-02';
+-- SET campaign_end_date = '2022-02-05';
+-- SET rolling_date = '2022-02-12';
+-- SET td ='TD10';
+-- SET year ='2122';
+
+-- --TD11
+-- Set campaignname = '2122_TD11';
+-- SET campaign_start_date = '2022-02-06';
+-- SET campaign_end_date = '2022-03-05';
+-- SET rolling_date = '2022-03-12';
+-- SET td ='TD11';
+-- SET year ='2122';
+
+--TD01
+-- Set campaignname = '2223_TD01';
+-- SET campaign_start_date = '2022-03-06';
+-- SET campaign_end_date = '2022-04-09';
+-- SET rolling_date = '2022-04-23';
+-- SET td ='TD01';
+-- SET year ='2223';
+
+--TD02
+-- Set campaignname = '2223_TD02';
+-- SET campaign_start_date = '2022-04-10';
+-- SET campaign_end_date = '2022-05-21';
+-- SET rolling_date = '2022-06-04';
+-- SET td ='TD02';
+-- SET year ='2223';
+
+--TD03
+-- Set campaignname = '2223_TD03';
+-- SET campaign_start_date = '2022-05-22';
+-- SET campaign_end_date = '2022-06-25';
+-- SET rolling_date = '2022-07-02';
+-- SET td ='TD03';
+-- SET year ='2223';
+
+--TD04
+-- Set campaignname = '2223_TD04';
+-- SET campaign_start_date = '2022-06-26';
+-- SET campaign_end_date = '2022-07-23';
+-- SET rolling_date = '2022-07-30';
+-- SET td ='TD04';
+-- SET year ='2223';
+
+--TD05
+-- Set campaignname = '2223_TD05';
+-- SET campaign_start_date = '2022-07-24';
+-- SET campaign_end_date = '2022-08-20';
+-- SET rolling_date = '2022-08-27';
+-- SET td ='TD05';
+-- SET year ='2223';
+
+--TD06
+-- Set campaignname = '2223_TD06';
+-- SET campaign_start_date = '2022-08-21';
+-- SET campaign_end_date = '2022-09-17';
+-- SET rolling_date = '2022-09-24';
+-- SET td ='TD06';
+-- SET year ='2223';
+
 
 // TABLE NAMES //
 SET TD_Date_And_Campaign_Map = concat($td,'_',$year,'_TD_Date_And_Campaign_Map');
@@ -33,7 +106,9 @@ SET Fuel_DM_Redemptions = concat($td,'_',$year,'_Fuel_DM_Redemptions');
 SET Fuel_DM_Redemptions1 = concat($td,'_',$year,'_Fuel_DM_Redemptions1');
 SET Fuel_DM_Redemptions2 = concat($td,'_',$year,'_Fuel_DM_Redemptions2');
 SET selectionfile = concat($td,'_',$year,'_Petrol_DM');
-
+SET CAT_Redemption5 = concat($td,'_',$year,'_CAT_Redemption5');
+SET DM_Redemptions4 = concat($td,'_',$year,'_DM_Redemptions4');
+SET Fuel_DM_Redemptions3 = concat($td,'_',$year,'_Fuel_DM_Redemptions3');
 -- set xxxxx table = concat('CUSTOMER_ANALYTICS.TD_REPORTING.',$td,'_',$year,'_xxxxxxxx')
 
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
@@ -59,14 +134,14 @@ create or replace table identifier ($TD_Date_And_Campaign_Map) as
                from TD_DATE_MAP as a
                         left join td_campaign_map as b
                              on (a.fin_year = b.fin_year and a.week = b.week)
-               where a.week_start <= $firstdatecampaign
-                 and a.week_end >= $firstdatecampaign
+               where a.week_start <= $campaign_start_date
+                 and a.week_end >= $campaign_start_date
                  and campaign_type = 'Petrol_DM'
                  and (b.redeeming = 1 or b.printing = 1);
 
-select * from TD10_Barcodes1;
 
---creating barcode lookup, all DM barcodes for money off and fuel weeks for each threshold
+
+--creating barcode lookup, all DM barcodes for money off and fuel weeks for each threshold1
 create or replace table identifier ($Barcodes1) as
 Select
 a.flowchartname,
@@ -74,7 +149,10 @@ a.campaignname,
 a.flowchartid,
 c.barcode,
 c.offer_cell,
-substring(c.barcode,1,12) as coupon
+substring(c.barcode,1,12) as coupon,
+     c.reward_value_penceoff,
+       c.offer_effective_date,
+       c.offer_expiration_date
 from EDWS_PROD.PROD_CMT_PRESENTATION.vw_chrh_campaign_ec as a
 inner join EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_fact_ec b
 on a.flowchartid = b.flowchartid
@@ -90,7 +168,14 @@ on a.flowchartname = td.flowchartname
 and a.campaignname = td.trade_driver
 where a.campaignname = $campaignname
 and a.flowchartname = 'Petrol_DM'
-group by 1,2,3,4,5,6;
+group by 1,2,3,4,5,6,7,8,9;
+
+select distinct barcode,offer_effective_date,offer_expiration_date from identifier ($Barcodes1)
+where offer_cell like 'SPET%'
+order by offer_effective_date;
+
+select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_offer_attribute_ec;
+
 
 
 -- add petrol barcode (6p) and start, end and rolling date
@@ -103,6 +188,22 @@ $campaign_start_date as campaign_start_date,
 $campaign_end_date as campaign_end_date,
 '14' rolling_days_validity
 from identifier ($Barcodes1);
+
+select * from identifier ($Barcodes2)
+where offer_cell like 'SPET%';
+
+--For TD01 where there is 4p vs 7p test
+-- Create or replace table identifier ($Barcodes2) as
+-- Select
+-- *,
+-- case when offer_cell like '%SPET%' then '2022-04-23' else null end as petrol_cat_end_date,
+-- '2022-03-06' as campaign_start_date,
+-- '2022-04-03' as campaign_end_date,
+-- '14' rolling_days_validity
+-- from identifier ($Barcodes1) as a
+-- left join petrol_barcode_map as b
+-- on a.reward_value_penceoff = b.pence_off
+-- ;
 
 
 -- Create redemptions for fuel weeks
@@ -121,11 +222,13 @@ select distinct
     0 as print_qty,
     1 as redeem_qty,
     bl.campaignname,
+    bl.reward_value_penceoff,
     '' as offer_code,
-    null as threshold,
+    null as threshold1,
     0 as online_flag,
     1 as pfs_red,
-    '0.06' as reward_value_penceoff,
+
+--     '0.06' as reward_value_penceoff,
     sum(pl.payment_value) as payment_value
 
 from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line pl
@@ -148,7 +251,8 @@ left join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_party_account pa
 inner join (select distinct         campaignname,
                                     petrol_barcode,
                                     campaign_start_date,
-                                    petrol_cat_end_date
+                                    petrol_cat_end_date,
+                            reward_value_penceoff
             from identifier($Barcodes2)
             where petrol_barcode is not null) as bl
     on pl.coupon_id = bl.Petrol_barcode
@@ -166,7 +270,7 @@ left join TD_date_map as b
 where a.transaction_date between b.week_start and b.week_end;
 
 select count (*) from identifier ($CAT_Redemption2);
--- 15,169 - This is all redeemers, including mal redeemers
+-- This is all redeemers, including mal redeemers
 
 
 -- Redeemers just in that campaign
@@ -174,7 +278,7 @@ create or replace table identifier ($CAT_Redemption3) as
 select * from identifier ($CAT_Redemption2)
 where ec_id in (select ec_id from IDENTIFIER($SELECTIONFILE) where target_control_flag = 1);
 Select count(*) from identifier ($CAT_Redemption3);
--- 9,044 - Redeemers in total (may have some from other campaigns- reuse barcodes)
+--Redeemers in total (may have some from other campaigns- reuse barcodes)
 
 -- Create prints of the fuel week
 create or replace table identifier ($Prints1) as
@@ -187,11 +291,12 @@ select distinct pf.party_account_id as sr_id,
                 bl.petrol_barcode,
                 pf.print_qty,
                 0 as redeem_qty,
-                bl.campaignname
+                bl.campaignname,
+                bl.reward_value_penceoff
 from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_CATALINA_PRINT_FILE  as pf
          inner join identifier($Barcodes2) as bl
                     on substr(pf.barcode,1,7) = substr(bl.petrol_Barcode,7,7)
-                    and pf.transaction_date between bl.campaign_start_date and bl.campaign_end_date;]
+                    and pf.transaction_date between bl.campaign_start_date and bl.campaign_end_date;
 
 -- add on EC_ID
 create or replace table identifier ($Prints2) as
@@ -201,22 +306,22 @@ left join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT as b
 on a.sr_id = b.party_account_id;
 
 select count(*) from identifier ($Prints2);
--- total prints 10,229 - this includes mal redeemers
+-- total prints  - this includes mal redeemers
 
 
 -- only prints from people that are in selection file
 Create or replace table identifier ($Prints3) as
     Select * from identifier ($Prints2)
 where EC_ID in (select ec_id from IDENTIFIER($SELECTIONFILE) where target_control_flag = 1);
-Select * from identifier ($Prints3);
---7,053 - prints from only those in selection file
+Select count(*) from identifier ($Prints3);
+
 
 create or replace table identifier ($Prints4) as
     select a.*,
            b.fin_week,
            b.week_start,
            b.week_end,
-           c.threshold,
+           c.threshold1,
            c.segment
     from identifier ($Prints3) as a
 left join td_date_map as b
@@ -231,16 +336,20 @@ select distinct b.ec_id,
        b.redeem_qty,
        b.red_date,
        case when b.red_date < a.print_date then 1 else 0 end as unrelated_redemption_flag,
-       c.threshold,
+       c.threshold1,
        c.segment,
        b.Payment_value,
        b.fin_week,
-       b.transaction_value
+       b.transaction_value,
+a.reward_value_penceoff
+
 from (select ec_id,
              sum(print_qty) as print_qty,
              min(transaction_date) as print_date,
-             fin_week
-from identifier($Prints4) group by 1,4) as a
+             fin_week,
+             petrol_barcode,
+             reward_value_penceoff
+from identifier($Prints4) group by 1,4,5,6) as a
 left join (select ec_id,
                   redeem_qty as redeem_qty,
                   transaction_date as red_date,
@@ -251,8 +360,7 @@ from identifier($CAT_Redemption3)) as b on a.ec_id = b.ec_id
 Left join IDENTIFIER($SELECTIONFILE) as c
 on b.ec_id = c.ec_id
 where unrelated_redemption_flag = 0 and redeem_qty is not null;
-
-
+Select * from  identifier($CAT_Redemption4);
 
 -- MONEY OFF WEEKS
 create or replace temp table identifier($MO_Payment) as
@@ -269,7 +377,6 @@ select party_account_id,
 from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line
 where coupon_id <> ''
 ;
-
 
 -- redemptions for fuel and money off weeks
 create or replace table identifier($DM_Redemptions1) as
@@ -318,7 +425,7 @@ select * from identifier($DM_Redemptions1)
 where ec_id in (select ec_id from IDENTIFIER($SELECTIONFILE) where target_control_flag = 1);
 Select count(*) from identifier($DM_Redemptions2);
 Select * from identifier($DM_Redemptions2)
--- 29,176 - total redeeemers in this campaign (petrol and money off)
+-- total redeeemers in this campaign (petrol and money off)
 
 -- add fin week
 create or replace table identifier($DM_Redemptions3) as
@@ -335,7 +442,7 @@ select a.ec_id,
        min(a.transaction_date) as red_date,
        a.transaction_value,
        a.fin_week,
-       b.Threshold,
+       b.threshold1,
        b.Segment,
        a.offer_cell,
        a.payment_value as Payment_value,
@@ -349,17 +456,14 @@ Select * from identifier($MO_DM_Redemptions)
 Select count(ec_id) as vol, redeem_qty as redemptions from identifier($MO_DM_Redemptions) group by 2;
 
 -- Fuel DM redemptions
-
-
 -- Redemptions for just fuel weeks in the selection file
 create or replace table identifier($Fuel_DM_Redemptions) as
 select a.ec_id,
-       a.sr_id,
        a.redeem_qty,
        min(a.transaction_date) as red_date,
        a.transaction_value,
        a.fin_week,
-       b.Threshold,
+       b.threshold1,
        b.Segment,
        a.offer_cell,
        a.payment_value as Payment_value,
@@ -368,77 +472,55 @@ From identifier($DM_Redemptions3) as a
 Left join identifier($selectionfile) as b
 on a.ec_id = b.ec_id
 where offer_cell  like 'SPET%'
-Group by 1,2,3,5,6,7,8,9,10,11;
+Group by 1,2,4,5,6,7,8,9,10;
 
 -- transactional level
 create or replace table identifier($Fuel_DM_Redemptions1) as
 select  b.ec_id,
        b.redeem_qty,
        b.red_date,
-       c.threshold,
+       c.threshold1,
        c.segment,
        b.transaction_value,
        b.fin_week,
-b. sr_id
+       b.transaction_time
 from identifier($Fuel_DM_Redemptions) as b
 Left join IDENTIFIER($SELECTIONFILE) as c
-on b.ec_id = c.ec_id
+on b.ec_id = c.ec_id;
 select * from identifier($Fuel_DM_Redemptions1);
--- 6,892
 
-select distinct ec_id, sum(redeem_qty) as vol from identifier($Fuel_DM_Redemptions1) group by 1 having vol > 1 ;
--- 895 with more than 1 Dm redemption
+-- select distinct ec_id, sum(redeem_qty) as vol from identifier($Fuel_DM_Redemptions1) group by 1 having vol > 1 ;
+
 
 -- customer level
 create or replace table identifier($Fuel_DM_Redemptions2) as
     select distinct ec_id,
-           threshold,
+           threshold1,
            segment,
            sum(redeem_qty) as redeem_qty,
-           sr_id,
            fin_week,
            red_date,
            transaction_value
 from identifier($Fuel_DM_Redemptions1)
-group by 1,2,3,5,6,7,8;
+group by 1,2,3,5,6,7;
 
 
 
-
--- CAT redemptions at customer level
-select ec_id,Count(*) Number_of_CAT_redemptions, segment, threshold, fin_week, red_date
-      from identifier($CAT_Redemption4) group by 1,3,4,5,6;
-
-
-
-
--- CAT summary table (grouped by week, segment and threshold)
-select Count(distinct ec_id) as vol, segment, threshold,fin_week
-      from identifier($CAT_Redemption4)
-      group by 2,3,4;
-
-
-
--- DM redemptions at customer level
-select ec_id, sr_id, count (*),
-             sum(redeem_qty) as Number_of_DM_redemptions, fin_week, segment, threshold
-             from identifier($Fuel_DM_Redemptions2)
-             group by 1,2,5,6,7;
 
 -- DM summary
-select Count(distinct ec_id) as vol, fin_week, segment, threshold
+select Count(distinct ec_id) as vol, fin_week, segment, threshold1
 from identifier($Fuel_DM_Redemptions2)
 group by 2,3,4;
---6884
+
 
 
 -- Prints customer level
-Select ec_id, sr_id, Count(*) number_of_prints, fin_week, segment, threshold
+Select ec_id, sr_id, Count(*) number_of_prints, fin_week, segment, threshold1
       From identifier($Prints4)
     Group by 1,2,4,5,6;
 
 -- prints summary
-select Count(distinct ec_id) as vol, fin_week, threshold, segment
+select Count(distinct ec_id) as vol, fin_week, threshold1, segment
 from identifier($Prints4)
 group by 2,3,4;
 --6961
@@ -455,27 +537,240 @@ select * from identifier($CAT_Redemption4);
 //QUESTIONS//
 
 // Target Vol //
+select count(*) as volume from identifier($selectionfile);
+--TD08
+select count(*) as volume from TD08_2122_Petrol_DM where target_control_flag = 1;
+--TD09
+select count(*) as volume from TD09_2122_Petrol_DM where target_control_flag = 1;
+--TD10
+select count(*) as volume from TD10_2122_Petrol_DM where target_control_flag = 1;
+--TD11
+select count(*) as volume from TD11_2122_Petrol_DM where target_control_flag = 1;
+--TD01
+select count(*) as volume from TD01_2223_Petrol_DM where target_control_flag = 1;
+--TD02
+select count(*) as volume from TD02_2223_Petrol_DM where target_control_flag = 1;
+--TD03
+select count(*) as volume from TD03_2223_Petrol_DM where target_control_flag = 1;
+--TD04
+select count(*) as volume from TD04_2223_Petrol_DM where target_control_flag = 1;
+--TD05
+select count(*) as volume from TD05_2223_Petrol_DM where target_control_flag = 1;
+--TD06
+select count(*) as volume from TD06_2223_Petrol_DM where target_control_flag = 1;
+
+
 select segment, count(*) as volume from identifier($selectionfile) group by 1;
-select threshold, count(*) as volume from identifier($selectionfile) group by 1 order by threshold asc;
+--TD08
+select segment, count(*) as volume from TD08_2122_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD09
+select segment,  count(*) as volume from TD09_2122_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;
+--TD10
+select segment, count(*) as volume from TD10_2122_Petrol_DM  where target_control_flag = 1 group by 1 order by segment asc;;
+--TD11
+select segment, count(*) as volume from TD11_2122_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD01
+select segment, count(*) as volume from TD01_2223_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD02
+select segment, count(*) as volume from TD02_2223_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD03
+select segment, count(*) as volume from TD03_2223_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD04
+select segment, count(*) as volume from TD04_2223_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD05
+select segment, count(*) as volume from TD05_2223_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+--TD06
+select segment, count(*) as volume from TD06_2223_Petrol_DM where target_control_flag = 1 group by 1 order by segment asc;;
+
+//By threshold1//
+select threshold1, count(*) as volume from identifier($selectionfile) group by 1 order by threshold1 asc;
+--TD08
+select threshold1, count(*) as volume from TD08_2122_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD09
+select threshold1, count(*) as volume from TD09_2122_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD10
+select threshold1, count(*) as volume from TD10_2122_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD11
+select threshold11, count(*) as volume from TD11_2122_Petrol_DM where target_control_flag = 1 group by 1 order by threshold11 asc;
+--TD01
+select threshold1, count(*) as volume from TD01_2223_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD02
+select threshold1, count(*) as volume from TD02_2223_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD03
+select threshold1, count(*) as volume from TD03_2223_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD04
+select threshold1, count(*) as volume from TD04_2223_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD05
+select threshold1, count(*) as volume from TD05_2223_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+--TD06
+select threshold1, count(*) as volume from TD06_2223_Petrol_DM where target_control_flag = 1 group by 1 order by threshold1 asc;
+
+
 
 // CAT redemptions //
-
 -- total no. of CAT redemptions
-select count (*) as vol from identifier($CAT_Redemption4);
--- 5494
+select sum(redeem_qty), segment as vol from identifier($CAT_Redemption4) group by 2 order by segment asc;;
+--TD08
+select sum(redeem_qty), segment as vol from TD08_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD09
+select sum(redeem_qty), segment as vol from TD09_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD10
+select sum(redeem_qty), segment as vol from TD10_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD11
+select sum(redeem_qty), segment as vol from TD11_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD01
+select sum(redeem_qty), segment as vol from TD01_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD02
+select sum(redeem_qty), segment as vol from TD02_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD03
+select sum(redeem_qty), segment as vol from TD03_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD04
+select sum(redeem_qty), segment as vol from TD04_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD05
+select sum(redeem_qty), segment as vol from TD05_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD06
+select sum(redeem_qty), segment as vol from TD06_2223_CAT_Redemption4 group by 2 order by segment asc;;
+
+
+select sum(redeem_qty), reward_value_penceoff as vol from TD01_2223_CAT_Redemption4 group by 2;
+
+
+
+-- total no. of CAT redeemers
+select count(ec_id), segment as vol from identifier($CAT_Redemption4) group by 2 order by segment asc;;
+--TD08
+select count(distinct ec_id), segment as vol from TD08_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD09
+select count(distinct ec_id), segment as vol from TD09_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD10
+select count(distinct ec_id), segment as vol from TD10_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD11
+select count(distinct ec_id), segment as vol from TD11_2122_CAT_Redemption4 group by 2 order by segment asc;;
+--TD01
+select count(distinct ec_id), segment as vol from TD01_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD02
+select count(distinct ec_id), segment as vol from TD02_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD03
+select count(distinct ec_id), segment as vol from TD03_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD04
+select count(distinct ec_id), segment as vol from TD04_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD05
+select count(distinct ec_id), segment as vol from TD05_2223_CAT_Redemption4 group by 2 order by segment asc;;
+--TD06
+select count(distinct ec_id), segment as vol from TD06_2223_CAT_Redemption4 group by 2 order by segment asc;;
+
+
+-- total no. of CAT redeemers vs redemptions
+select count (distinct ec_id), sum(redeem_qty) from identifier($CAT_Redemption4);
 
 -- no. of CAT redemptions by number
 Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
-      From (select ec_id, count(*) as Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
       from identifier($CAT_Redemption4) group by 1)
-group by 2;
+group by 2
+order by Number_of_CAT_redemptions asc;
 
--- no. of CAT redemptions per redeemer
-Select distinct ec_id, Number_of_CAT_redemptions
-      From (select ec_id, count(*) as Number_of_CAT_redemptions
-      from identifier($CAT_Redemption4) group by 1)
-group by 1,2;
--- 4595 redeemers
+--TD08
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD08_2122_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD09
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD09_2122_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD10
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD10_2122_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD11
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD11_2122_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD01
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD01_2223_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD02
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD02_2223_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD03
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD03_2223_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD04
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD04_2223_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD05
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD05_2223_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+--TD06
+Select distinct count(ec_id) as volume, Number_of_CAT_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_CAT_redemptions
+      from TD06_2223_CAT_Redemption4 group by 1)
+group by 2
+order by Number_of_CAT_redemptions asc;
+
+
+
+-- -- no. of CAT redemptions per redeemer
+-- Select distinct ec_id, Number_of_CAT_redemptions
+--       From (select ec_id, count(*) as Number_of_CAT_redemptions
+--       from identifier($CAT_Redemption4) group by 1)
+-- group by 1,2;
+
+ //Engagement by day
+-- CAT
+select sum(redeem_qty) as volume, red_date from identifier($CAT_Redemption4) group by 2;
+--TD08
+ select sum(redeem_qty) as volume, red_date from TD08_2122_CAT_Redemption4 group by 2;
+--TD09
+ select sum(redeem_qty) as volume, red_date from TD09_2122_CAT_Redemption4 group by 2;
+--TD10
+ select sum(redeem_qty) as volume, red_date from TD10_2122_CAT_Redemption4 group by 2;
+--TD11
+ select sum(redeem_qty) as volume, red_date from TD11_2122_CAT_Redemption4 group by 2;
+--TD01
+ select sum(redeem_qty) as volume, red_date from TD01_2223_CAT_Redemption4 group by 2;
+--TD02
+ select sum(redeem_qty) as volume, red_date from TD02_2223_CAT_Redemption4 group by 2;
+--TD03
+ select sum(redeem_qty) as volume, red_date from TD03_2223_CAT_Redemption4 group by 2;
+--TD04
+ select sum(redeem_qty) as volume, red_date from TD04_2223_CAT_Redemption4 group by 2;
+--TD05
+ select sum(redeem_qty) as volume, red_date from TD05_2223_CAT_Redemption4 group by 2;
+--TD06
+ select sum(redeem_qty) as volume, red_date  from TD06_2223_CAT_Redemption4 group by 2;
 
 
 
@@ -483,115 +778,972 @@ group by 1,2;
 // DM redemptions //
 
 -- total no. of DM redemptions
-select count (redeem_qty) as vol from identifier($Fuel_DM_Redemptions2);
---6884
+select sum(redeem_qty) as vol, segment from identifier($Fuel_DM_Redemptions2) group by 2;
+--TD08
+select sum(redeem_qty) as vol, segment from TD08_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+
+--TD09
+select sum(redeem_qty) as vol, segment from TD09_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD10
+select sum(redeem_qty) as vol, segment from TD10_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD11
+select sum(redeem_qty) as vol, segment from TD11_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD01
+select sum(redeem_qty) as vol, segment from TD01_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD02
+select sum(redeem_qty) as vol, segment from TD02_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD03
+select sum(redeem_qty) as vol, segment from TD03_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD04
+select sum(redeem_qty) as vol, segment from TD04_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD05
+select sum(redeem_qty) as vol, segment from TD05_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+--TD06
+select sum(redeem_qty) as vol, segment from TD06_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;
+
+
+
+-- total no. of DM redeemers
+
+--TD08
+select count(distinct ec_id), segment as vol from TD08_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD09
+select count(distinct ec_id), segment as vol from TD09_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD10
+select count(distinct ec_id), segment as vol from TD10_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD11
+select count(distinct ec_id), segment as vol from TD11_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD01
+select count(distinct ec_id), segment as vol from TD01_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD02
+select count(distinct ec_id), segment as vol from TD02_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD03
+select count(distinct ec_id), segment as vol from TD03_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD04
+select count(distinct ec_id), segment as vol from TD04_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD05
+select count(distinct ec_id), segment as vol from TD05_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD06
+select count(distinct ec_id), segment as vol from TD06_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+
+
+
 
 -- no. of DM redemptions by number
 Select distinct count(ec_id) as volume, Number_of_DM_redemptions
       From (select ec_id, count(redeem_qty) as Number_of_DM_redemptions
       from identifier($Fuel_DM_Redemptions2) group by 1)
     Group by 2;
+--TD08
+Select distinct count(ec_id), Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD08_2122_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
 
+--TD09
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD09_2122_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+
+--TD10
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD10_2122_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD11
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD11_2122_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD01
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD01_2223_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD02
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD02_2223_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD03
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD03_2223_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD04
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD04_2223_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD05
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id, sum(redeem_qty) as Number_of_DM_redemptions
+      from TD05_2223_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+--TD06
+Select distinct count(ec_id) as volume, Number_of_DM_redemptions
+      From (select ec_id,sum(redeem_qty) as Number_of_DM_redemptions
+      from TD06_2223_Fuel_DM_Redemptions2 group by 1)
+    Group by 2
+order by Number_of_DM_redemptions asc;
+
+//Engagement by week (DM redemptions)
+--  select count (*) as volume, fin_week from identifier($CAT_Redemption4) group by 2;
+--  select count (*) as volume, fin_week from identifier($Fuel_DM_Redemptions2) group by 2;
+--  select count (*) as volume, fin_week from identifier($Prints4) group by 2;
+ select count (*) as volume, fin_week from identifier($Fuel_DM_Redemptions2) group by 2;
+
+--TD08
+ select count (*) as volume, fin_week from TD08_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD08_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD09
+ select count (distinct ec_id) as volume, fin_week from TD09_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD09_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD10
+ select count (*) as volume, fin_week from TD10_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD10_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD11
+ select count (*) as volume, fin_week from TD11_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD11_2122_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD01
+ select count (*) as volume, fin_week from TD01_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD01_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD02
+ select count (*) as volume, fin_week from TD02_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD02_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD03
+ select count (*) as volume, fin_week from TD03_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD03_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD04
+ select count (*) as volume, fin_week from TD04_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD04_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD05
+ select count (*) as volume, fin_week from TD05_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD05_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+--TD06
+ select count (*) as volume, fin_week from TD06_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+ select sum(redeem_qty) as volume, fin_week from TD06_2223_Fuel_DM_Redemptions2 group by 2 order by fin_week asc;
+
+
+// Engagement by day //
+select sum(redeem_qty) as volume,red_date from identifier($Fuel_DM_Redemptions2) group by 2;
+--TD08
+ select sum(redeem_qty) as volume, red_date from TD08_2122_Fuel_DM_Redemptions2 group by 2;
+--TD09
+ select sum(redeem_qty) as volume, red_date from TD09_2122_Fuel_DM_Redemptions2 group by 2;
+--TD10
+ select sum(redeem_qty) as volume, red_date from TD10_2122_Fuel_DM_Redemptions2 group by 2;
+--TD11
+ select sum(redeem_qty) as volume, red_date from TD11_2122_Fuel_DM_Redemptions2 group by 2;
+--TD01
+ select sum(redeem_qty) as volume, red_date from TD01_2223_Fuel_DM_Redemptions2 group by 2;
+--TD02
+ select sum(redeem_qty) as volume, red_date from TD02_2223_Fuel_DM_Redemptions2 group by 2;
+--TD03
+ select sum(redeem_qty) as volume, red_date from TD03_2223_Fuel_DM_Redemptions2 group by 2;
+--TD04
+ select sum(redeem_qty) as volume, red_date from TD04_2223_Fuel_DM_Redemptions2 group by 2;
+--TD05
+ select sum(redeem_qty) as volume, red_date from TD05_2223_Fuel_DM_Redemptions2 group by 2;
+--TD06
+ select sum(redeem_qty) as volume, red_date  from TD06_2223_Fuel_DM_Redemptions2 group by 2;
 
 
 // PRINTS //
 
 -- NOTE: all excess prints are accounted for in the back up file
-
 -- Total no. of prints
-select count (*) as vol from identifier($Prints4);
--- 7051
+select count (*),segment as vol from identifier($Prints4) group by 2;
+select count (*),segment as vol from TD08_2122_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD09_2122_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD10_2122_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD11_2122_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD01_2223_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD02_2223_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD03_2223_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD04_2223_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD05_2223_Prints4 group by 2 order by vol asc;
+select count (*),segment as vol from TD06_2223_Prints4 group by 2 order by vol asc;
 
 -- no. of prints by number
 Select distinct count(ec_id) as volume, number_of_prints
-      From (select ec_id, count(*) as number_of_prints
+      From (select ec_id, sum(print_qty) as number_of_prints
       from identifier($Prints4)
       group by 1)
-    Group by 2;
+    Group by 2
+order by number_of_prints asc;
+
+--TD08
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD08_2122_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD09
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD09_2122_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD10
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD10_2122_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD11
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD11_2122_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD01
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD01_2223_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD02
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD02_2223_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD03
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD03_2223_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD04
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD04_2223_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD05
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD05_2223_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
+
+--TD06
+Select distinct count(ec_id) as volume, number_of_prints
+      From (select ec_id, count(*) as number_of_prints
+      from TD06_2223_Prints4
+      group by 1)
+    Group by 2
+order by number_of_prints asc;
 
 
- //Engagement by week (CAT Redemptions)
- select count (*) as volume, fin_week from identifier($CAT_Redemption4) group by 2;
- select count (*) as volume, fin_week from identifier($Fuel_DM_Redemptions2) group by 2;
- select count (*) as volume, fin_week from identifier($Prints4) group by 2;
 
 
-// Engagement by day //
-select count(*) as volume,red_date from identifier($Fuel_DM_Redemptions2) group by 2;
-select count(*) as volume, red_date from identifier($CAT_Redemption4) group by 2;
+-- // how much do customers spend on fuel //
+-- select avg(transaction_value) as average_spend, segment from identifier($CAT_Redemption4) group by 2;
+-- select avg(transaction_value) as average_spend, threshold1 from identifier($CAT_Redemption4) group by 2;
+--
+-- select avg(transaction_value) as average_spend, segment, threshold1 from identifier($CAT_Redemption4) group by 2;
+-- --TD08
+--  select avg(transaction_value) as average_spend, segment from TD08_2122_CAT_Redemption4 group by 2;
+-- --TD09
+--  select avg(transaction_value) as average_spend, segment from TD09_2122_CAT_Redemption4 group by 2;
+-- --TD10
+--  select avg(transaction_value) as average_spend, segment from TD10_2122_CAT_Redemption4 group by 2;
+-- --TD11
+--  select avg(transaction_value) as average_spend, segment from TD11_2122_CAT_Redemption4 group by 2;
+-- --TD01
+--  select avg(transaction_value) as average_spend, segment from TD01_2223_CAT_Redemption4 group by 2;
+-- --TD02
+--  select avg(transaction_value) as average_spend, segment from TD02_2223_CAT_Redemption4 group by 2;
+-- --TD03
+--  select avg(transaction_value) as average_spend, segment from TD03_2223_CAT_Redemption4 group by 2;
+-- --TD04
+--  select avg(transaction_value) as average_spend, segment from TD04_2223_CAT_Redemption4 group by 2;
+-- --TD05
+--  select avg(transaction_value) as average_spend, segment from TD05_2223_CAT_Redemption4 group by 2;
+-- --TD06
+--  select avg(transaction_value) as average_spend, segment from TD06_2223_CAT_Redemption4 group by 2;
+--
+-- //By threshold1 //
+-- select avg(transaction_value) as average_spend, threshold1 from identifier($CAT_Redemption4) group by 2;
+-- --TD08
+--  select avg(transaction_value) as average_spend, threshold1 from TD08_2122_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD09
+--  select avg(transaction_value) as average_spend, threshold1 from TD09_2122_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD10
+--  select avg(transaction_value) as average_spend, threshold1 from TD10_2122_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD11
+--  select avg(transaction_value) as average_spend, threshold1 from TD11_2122_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD01
+--  select avg(transaction_value) as average_spend, threshold1 from TD01_2223_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD02
+--  select avg(transaction_value) as average_spend, threshold1 from TD02_2223_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD03
+--  select avg(transaction_value) as average_spend, threshold1 from TD03_2223_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD04
+--  select avg(transaction_value) as average_spend, threshold1 from TD04_2223_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD05
+--  select avg(transaction_value) as average_spend, threshold1 from TD05_2223_CAT_Redemption4 group by 2 order by threshold1 asc;
+-- --TD06
+--  select avg(transaction_value) as average_spend, threshold1  from TD06_2223_CAT_Redemption4 group by 2 order by threshold1 asc;
 
-// how much do customers spend on fuel //
-select avg(transaction_value) as average_spend, segment from identifier($CAT_Redemption4) group by 2;
-select avg(transaction_value) as average_spend, threshold from identifier($CAT_Redemption4) group by 2;
 
-// How much do customers spend in shop to meet threshold//
+// How much do customers spend in shop to meet threshold1//
 select avg(transaction_value) as average_spend, segment from identifier($Fuel_DM_Redemptions2) group by 2;
-select threshold, avg(transaction_value) as average_spend  from identifier($Fuel_DM_Redemptions2) group by 1 order by threshold ASC;
+select threshold1, avg(transaction_value) as average_spend  from identifier($Fuel_DM_Redemptions2) group by 1 order by threshold1 ASC;
+
+--TD08
+ select avg(transaction_value) as average_spend, segment from TD08_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD09
+ select avg(transaction_value) as average_spend, segment from TD09_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD10
+ select avg(transaction_value) as average_spend, segment from TD10_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD11
+ select avg(transaction_value) as average_spend, segment from TD11_2122_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD01
+ select avg(transaction_value) as average_spend, segment from TD01_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD02
+ select avg(transaction_value) as average_spend, segment from TD02_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD03
+ select avg(transaction_value) as average_spend, segment from TD03_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD04
+ select avg(transaction_value) as average_spend, segment from TD04_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD05
+ select avg(transaction_value) as average_spend, segment from TD05_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+--TD06
+ select avg(transaction_value) as average_spend, segment from TD06_2223_Fuel_DM_Redemptions2 group by 2 order by segment asc;;
+
+//By threshold1 //
+--TD08
+ select avg(transaction_value) as average_spend, threshold1 from TD08_2122_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD09
+ select avg(transaction_value) as average_spend, threshold1 from TD09_2122_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD10
+ select avg(transaction_value) as average_spend, threshold1 from TD10_2122_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD11
+ select avg(transaction_value) as average_spend, threshold1 from TD11_2122_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD01
+ select avg(transaction_value) as average_spend, threshold1 from TD01_2223_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD02
+ select avg(transaction_value) as average_spend, threshold1 from TD02_2223_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD03
+ select avg(transaction_value) as average_spend, threshold1 from TD03_2223_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD04
+ select avg(transaction_value) as average_spend, threshold1 from TD04_2223_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD05
+ select avg(transaction_value) as average_spend, threshold1 from TD05_2223_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
+--TD06
+ select avg(transaction_value) as average_spend, threshold1  from TD06_2223_Fuel_DM_Redemptions2 group by 2 order by threshold1 asc;
 
 
 // Red rate //
+//CAT//
+create or replace temp table identifier($CAT_Redemption5) as
+select count(a.ec_id) as selection,
+       count(distinct b.ec_id) as redeemers,
+       sum(b.redeem_qty) as redemptions,
+       a.segment as segment
+from identifier($selectionfile) as a
+left join identifier($CAT_Redemption4) as b
+on a.ec_id = b.ec_id
+where a.target_control_flag = 1
+group by 4;
+
+
+
+-- Total participation rate
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from identifier($CAT_Redemption5);
+--TD08
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD08_2122_CAT_Redemption5;
+--TD09
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD09_2122_CAT_Redemption5;
+--TD10
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD10_2122_CAT_Redemption5;
+--TD11
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD11_2122_CAT_Redemption5;
+--TD01
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD01_2223_CAT_Redemption5;
+--TD02
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD02_2223_CAT_Redemption5;
+--TD03
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD03_2223_CAT_Redemption5;
+--TD04
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD04_2223_CAT_Redemption5;
+--TD05
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD05_2223_CAT_Redemption5;
+--TD06
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD06_2223_CAT_Redemption5;
+
+
+
+-- participation rate by segment
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from identifier($CAT_Redemption5)
+group by 1;
+--TD08
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD08_2122_CAT_Redemption5
+group by 1;
+--TD09
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD09_2122_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD10
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD10_2122_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD11
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD11_2122_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD01
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD01_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD02
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD02_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD03
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD03_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD04
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD04_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD05
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD05_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD06
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD06_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+
+
+-- Total red rate
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from identifier($CAT_Redemption5);
+--TD08
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD08_2122_CAT_Redemption5;
+--TD09
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD09_2122_CAT_Redemption5;
+--TD10
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD10_2122_CAT_Redemption5;
+--TD11
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD11_2122_CAT_Redemption5;
+--TD01
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD01_2223_CAT_Redemption5;
+--TD02
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD02_2223_CAT_Redemption5;
+--TD03
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD03_2223_CAT_Redemption5;
+--TD04
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD04_2223_CAT_Redemption5;
+--TD05
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD05_2223_CAT_Redemption5;
+--TD06
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD06_2223_CAT_Redemption5;
+
+
+
+-- Red rate by segment
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from identifier($CAT_Redemption5)
+group by 1
+Order by segment asc;
+--TD08
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD08_2122_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD09
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD09_2122_CAT_Redemption5
+group by 1;
+--TD10
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD10_2122_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD11
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD11_2122_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD01
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD01_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD02
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD02_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD03
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD03_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD04
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD04_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD05
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD05_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
+--TD06
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD06_2223_CAT_Redemption5
+group by 1
+Order by segment asc;
 
 
 
 
 
--- selection volume / redemptions
-Select segment, sum((select segment, count(*) as volume from identifier($selectionfile) group by 1) /
-                    (Select distinct count(ec_id) as volume,segment
-                    From (select ec_id, segment --, count(*) as Number_of_CAT_redemptions
-                    from identifier($CAT_Redemption4) group by 1,2)
-                    Group by 2))
-    from identifier($CAT_Redemption4) as red_rate
+//DM//
+create or replace temp table identifier($Fuel_DM_Redemptions3) as
+select count(a.ec_id) as selection,
+       count(distinct b.ec_id) as redeemers,
+       sum(b.redeem_qty) as redemptions,
+       a.segment as segment
+from identifier($selectionfile) as a
+left join identifier($Fuel_DM_Redemptions2) as b
+on a.ec_id = b.ec_id
+where a.target_control_flag=1
+group by 4;
+
+
+select sum(redemptions) from TD09_2122_Fuel_DM_redemptions3;
+select sum(redemptions),segment from TD09_2122_Fuel_DM_redemptions3 group by 2;
+
+--Total participation Rate
+select sum(redemptions), sum(redeemers) from identifier($Fuel_DM_Redemptions3);
+--TD08
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD08_2122_Fuel_DM_Redemptions3;
+--TD09
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD09_2122_Fuel_DM_Redemptions3;
+--TD10
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD10_2122_Fuel_DM_Redemptions3;
+--TD11
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD11_2122_Fuel_DM_Redemptions3;
+--TD01
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD01_2223_Fuel_DM_Redemptions3;
+--TD02
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD02_2223_Fuel_DM_Redemptions3;
+--TD03
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD03_2223_Fuel_DM_Redemptions3;
+--TD04
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD04_2223_Fuel_DM_Redemptions3;
+--TD05
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD05_2223_Fuel_DM_Redemptions3;
+--TD06
+Select round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD06_2223_Fuel_DM_Redemptions3;
+
+-- participation rate by segment
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from identifier($Fuel_DM_Redemptions3)
+group by 1
+Order by segment asc;
+--TD08
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD08_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD09
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD09_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD10
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD10_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD11
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD11_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD01
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD01_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD02
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD02_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD03
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD03_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD04
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD04_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD05
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD05_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD06
+Select segment,round(((sum(redeemers))/ (sum(selection))) *100,2) as Participation_rate
+from TD06_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+
+
+-- Total redemption rate
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from identifier($Fuel_DM_Redemptions3);
+--TD08
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD08_2122_Fuel_DM_Redemptions3;
+--TD09
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD09_2122_Fuel_DM_Redemptions3;
+--TD10
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD10_2122_Fuel_DM_Redemptions3;
+--TD11
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD11_2122_Fuel_DM_Redemptions3;
+--TD01
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD01_2223_Fuel_DM_Redemptions3;
+--TD02
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD02_2223_Fuel_DM_Redemptions3;
+--TD03
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD03_2223_Fuel_DM_Redemptions3;
+--TD04
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD04_2223_Fuel_DM_Redemptions3;
+--TD05
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD05_2223_Fuel_DM_Redemptions3;
+--TD06
+Select round(((sum(redemptions))/ (sum(selection))) *100,2) as redemption_rate
+from TD06_2223_Fuel_DM_Redemptions3;
+
+
+-- Red rate by segment
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Redemption_rate
+from identifier($Fuel_DM_Redemptions2)
+group by 1
+Order by segment asc;
+--TD08
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD08_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD09
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD09_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD10
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD10_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD11
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD11_2122_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD01
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD01_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+
+--TD02
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD02_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD03
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD03_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD04
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD04_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD05
+Select segment, round(((sum(redemptions))/ (sum(selection))) *100,2) as Redemption_rate
+from TD05_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+--TD06
+Select segment, round(((sum(redeemers))/ (sum(selection))) *100,2) as Redemption_rate
+from TD06_2223_Fuel_DM_Redemptions3
+group by 1
+Order by segment asc;
+
+
+--
+--
+-- -- selection file vol
+-- select segment, count(*) as volume from identifier($selectionfile) group by 1;
+-- --TD08
+-- select segment, count(*) as volume from TD08_2122_Petrol_DM group by 1;
+-- --TD09
+-- select segment, count(*) as volume from TD09_2122_Petrol_DM group by 1;
+-- --TD10
+-- select segment, count(*) as volume from TD10_2122_Petrol_DM group by 1;
+-- --TD11
+-- select segment, count(*) as volume from TD11_2122_Petrol_DM group by 1;
+-- --TD01
+-- select segment, count(*) as volume from TD01_2223_Petrol_DM  group by 1;
+-- --TD02
+-- select segment, count(*) as volume from TD02_2223_Petrol_DM group by 1;
+-- --TD03
+-- select segment, count(*) as volume from TD03_2223_Petrol_DM group by 1;
+-- --TD04
+-- select segment, count(*) as volume from TD04_2223_Petrol_DM group by 1;
+-- --TD05
+-- select segment, count(*) as volume from TD05_2223_Petrol_DM group by 1;
+-- --TD06
+-- select segment, count(*) as volume from TD06_2223_Petrol_DM group by 1;
+--
+-- select * from TD01_2223_Petrol_DM;
+--
+-- select count(*), split_test from TD01_2223_Petrol_DM where target_control_flag = 1 group by 2;
+--
+
+-- // TO CHECK IF EXCESS PRINTS ARE IN THE BACKUP FILE //
+-- select substr(sr_id,4,11) from identifier($Prints4) where substr(sr_id,4,11) not in (select substr(sr_id,4,11) from identifier($Fuel_DM_Redemptions2));
+
+
+-- // Union all tables together //
+-- // Redemption //
+create or replace table all_DM_redemptions as
+select ec_id, redeem_qty, red_date, segment, threshold1,fin_week, campaign
+from (select ec_id, redeem_qty, red_date, segment, threshold11 as threshold1,fin_week, '2122_TD08' as campaign from TD08_2122_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week, '2122_TD09' as campaign from TD09_2122_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week, '2122_TD10' as campaign from TD10_2122_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold11 as threshold1,fin_week, '2122_TD11' as campaign from TD11_2122_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week, '2223_TD01' as campaign from TD01_2223_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD02' as campaign from TD02_2223_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD03' as campaign from TD03_2223_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD04' as campaign from TD04_2223_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD05' as campaign from TD05_2223_Fuel_DM_Redemptions2
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD06' as campaign from TD06_2223_Fuel_DM_Redemptions2);
+
+select distinct ec_id, count(campaign) from all_DM_redemptions group by 1;
+select * from all_DM_redemptions;
+
+//CAT//
+create or replace table all_CAT_redemptions as
+select ec_id, redeem_qty, red_date, segment, threshold1,fin_week, campaign
+from (select ec_id, redeem_qty, red_date, segment, threshold11 as threshold1,fin_week, '2122_TD08' as campaign from TD08_2122_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week, '2122_TD09' as campaign from TD09_2122_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week, '2122_TD10' as campaign from TD10_2122_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold11 as threshold1,fin_week, '2122_TD11' as campaign from TD11_2122_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week, '2223_TD01' as campaign from TD01_2223_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD02' as campaign from TD02_2223_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD03' as campaign from TD03_2223_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD04' as campaign from TD04_2223_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD05' as campaign from TD05_2223_CAT_Redemption4
+    union all select ec_id, redeem_qty, red_date, segment, threshold1 as threshold1,fin_week,'2223_TD06' as campaign from TD06_2223_CAT_Redemption4);
+
+select distinct ec_id, count(campaign) from all_CAT_redemptions group by 1;
+select * from all_CAT_redemptions;
+
+-- row per EC_ID on which campaign they redeemed in - can have more than one row if redeemed in more that one campaigns
+create or replace table Campaigns_redeemed_in as
+    select distinct ec_ID,
+                    campaign,
+                    1 as count_of_campaigns_redeemed
+from all_CAT_redemptions
+order by ec_id;
+
+-- by EC_ID the number of campaigns they've redeemed in
+create or replace table no_of_campaigns_redeemed as
+    select ec_id,
+           sum(count_of_campaigns_redeemed) as campaigns_redeemed
+from Campaigns_redeemed_in
+Group By 1;
+
+-- no of people that have redeemed x no. of campaigns
+create or replace table Campaigns_redeemed_distribution as
+    select campaigns_redeemed,
+           count(ec_id) as vol
+from no_of_campaigns_redeemed
 group by 1;
 
 
--- no. of CAT redemptions by number
-create or replace temp table CAT_redemptions as
-Select distinct count(ec_id) as volume,segment
-      From (select ec_id, segment, count(*) as Number_of_CAT_redemptions
-      from identifier($CAT_Redemption4) group by 1,2)
-    Group by 2;
-
--- selection file vol
-select segment, count(*) as volume from identifier($selectionfile) group by 1;
-
-select * from identifier($CAT_Redemption4);
 
 
-// TO CHECK IF EXCESS PRINTS ARE IN THE BACKUP FILE //
-select substr(sr_id,4,11) from identifier($Prints4) where substr(sr_id,4,11) not in (select substr(sr_id,4,11) from identifier($Fuel_DM_Redemptions2));
 
-// Union all tables together //
-// Redemption //
-create or replace table all_redemptions as
-select ec_id, redeem_qty, red_date, segment, threshold,fin_week, campaign
-from (select ec_id, redeem_qty, red_date, segment, threshold,fin_week, '2122_TD10' as campaign from TD10_2122_CAT_Redemption4
-    union all select ec_id, redeem_qty, red_date, segment, threshold,fin_week, '2122_TD11' as campaign from TD11_2122_CAT_Redemption4
-    union all select ec_id, redeem_qty, red_date, segment, threshold,fin_week, '2223_TD01' as campaign from TD01_2223_CAT_Redemption4
-    union all select ec_id, redeem_qty, red_date, segment, threshold,fin_week,'2223_TD02' as campaign from TD02_2223_CAT_Redemption4
-    union all select ec_id, redeem_qty, red_date, segment, threshold,fin_week,'2223_TD03' as campaign from TD03_2223_CAT_Redemption4
-    union all select ec_id, redeem_qty, red_date, segment, threshold,fin_week,'2223_TD04' as campaign from TD04_2223_CAT_Redemption4
-    union all select ec_id, redeem_qty, red_date, segment, threshold,fin_week,'2223_TD05' as campaign from TD05_2223_CAT_Redemption4);
 
-select ec_id, count(campaign) from all_redemptions group by 1;
 
-// Selections //
+-- // Selections //
 create or replace table all_selections as
-select ec_id, segment, threshold, campaign, '1' as in_campaign
-from (select ec_id, segment, threshold, '2122_TD10' as campaign  from TD10_2122_Petrol_DM
-    union all select ec_id, segment, threshold1, '2122_TD11' as campaign from TD11_2122_Petrol_DM
-    union all select ec_id, segment, threshold,'2223_TD01' as campaign from TD01_2223_Petrol_DM
-    union all select ec_id, segment, threshold,'2223_TD02' as campaign from TD02_2223_Petrol_DM
-    union all select ec_id, segment, threshold,'2223_TD03' as campaign from TD03_2223_Petrol_DM
-    union all select ec_id, segment, threshold,'2223_TD04' as campaign from TD04_2223_Petrol_DM
-    union all select ec_id, segment, threshold,'2223_TD05' as campaign from TD05_2223_Petrol_DM);
+select distinct ec_id, segment, threshold1, campaign, '1' as in_campaign
+from (select distinct ec_id, segment, threshold11 as threshold1, '2122_TD08' as campaign  from TD08_2122_Petrol_DM
+    union all select distinct ec_id, segment, threshold1 as threshold1, '2122_TD09' as campaign  from TD09_2122_Petrol_DM
+    union all select  distinct ec_id, segment, threshold1 as threshold1, '2122_TD10' as campaign  from TD10_2122_Petrol_DM
+    union all select distinct ec_id, segment, threshold11 as threshold1, '2122_TD11' as campaign from TD11_2122_Petrol_DM
+    union all select distinct ec_id, segment, threshold1 as threshold1,'2223_TD01' as campaign from TD01_2223_Petrol_DM
+    union all select distinct ec_id, segment, threshold1 as threshold1,'2223_TD02' as campaign from TD02_2223_Petrol_DM
+    union all select  distinct ec_id, segment, threshold1 as threshold1,'2223_TD03' as campaign from TD03_2223_Petrol_DM
+    union all select distinct ec_id, segment, threshold1 as threshold1,'2223_TD04' as campaign from TD04_2223_Petrol_DM
+    union all select distinct ec_id, segment, threshold1 as threshold1,'2223_TD05' as campaign from TD05_2223_Petrol_DM
+    union all select distinct ec_id, segment, threshold1 as threshold1,'2223_TD06' as campaign from TD06_2223_Petrol_DM);
 
 select ec_id, count(campaign) from all_selections group by 1;
 
-select * from identifier ($selectionfile);
-select * from identifier($Prints4);
-select * from identifier($Fuel_DM_Redemptions2);
-select * from identifier($CAT_Redemption4);
+--grouped by EC_ID (one row per customer) how many selections they have been in i.e. how many packs/campaigns recieved
+create or replace table count_selections1 as
+select count(ec_id) as count_of_campaigns_received,
+       ec_id
+from all_selections
+group by 2
+order by ec_id;
+
+-- get redemption table: --
+-- no of people that have redeemed x no. of campaigns
+create or replace table Campaigns_redeemed_in as
+    select distinct ec_ID,
+                    campaign,
+                    1 as count_of_campaigns_redeemed
+from all_CAT_redemptions
+    order by ec_id;
+
+--no of people that have redeemed x no. of campaigns grouped by ec_id
+create or replace table no_of_campaigns_redeemed as
+    select ec_id,
+           sum(count_of_campaigns_redeemed) as campaigns_redeemed
+from Campaigns_redeemed_in
+Group By 1;
+
+--join on the selection and redemption table
+create or replace table distribution_by_customer as
+    select a.ec_id, a.count_of_campaigns_received, zeroifnull(b.campaigns_redeemed) as campaign_redeemed
+    from count_selections1 a
+left join no_of_campaigns_redeemed b
+on a.ec_id = b.ec_id
+order by count_of_campaigns_received;
+
+--gives the number of customers that were selected in x campaigns, how many campaigns they redeemed in
+create or replace table final_distribution2 as
+    select count_of_campaigns_received,
+           campaign_redeemed,
+           count(ec_id) as vol
+from distribution_by_customer
+    group by 1,2
+order by count_of_campaigns_received;
 
 
-// PFS //
+
+--
+-- select * from identifier ($selectionfile);
+-- select * from identifier($Prints4);
+-- select * from identifier($Fuel_DM_Redemptions2);
+-- select * from identifier($CAT_Redemption4);
+--
+--
+-- // PFS //
+
+
+
+-- -- CAT redemptions at customer level
+-- select ec_id,Count(*) Number_of_CAT_redemptions, segment, threshold1, fin_week, red_date
+--       from identifier($CAT_Redemption4) group by 1,3,4,5,6;
+--
+--
+-- -- CAT summary table (grouped by week, segment and threshold1)
+-- select Count(distinct ec_id) as vol, segment, threshold1,fin_week
+--       from identifier($CAT_Redemption4)
+--       group by 2,3,4;
+--
+--
+-- -- DM redemptions at customer level
+-- select ec_id, sr_id, count (*),
+--              sum(redeem_qty) as Number_of_DM_redemptions, fin_week, segment, threshold1
+--              from identifier($Fuel_DM_Redemptions2)
+--              group by 1,2,5,6,7;
