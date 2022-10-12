@@ -4,6 +4,9 @@ USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
 
+
+
+
 //TD04//
 -- Make my own campaign map
 create or replace table td_date_and_campaign_map_TD04_all as
@@ -131,11 +134,23 @@ having count(*) > 1;
 
 select * from multiple_redeemptions;
 
-Select count(*) from multiple_redeemptions; -- 429
-Select count(*) from multiple_redeemptions where campaign = 'TD04_2223_Coupon_at_Till'; -- 365
-Select count(*) from multiple_redeemptions where campaign = 'TD04_2223_Standard_DM'; -- 54
+Select count(*) from multiple_redeemptions;-- 429
+select count (distinct ec_id) from multiple_redeemptions; -- 388
+
+
+Select count (ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Coupon_at_Till'; -- 361
+Select count (distinct ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Coupon_at_Till'; -- 345
+
+Select count(distinct ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Standard_DM'; -- 34
+Select count(ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Standard_DM'; -- 54
+
+select count (distinct ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Petrol_DM' -- 9
+select count (ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Petrol_DM' -- 10
+
+
 select count (ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Coupon_at_Till' and ec_id in (select ec_id from TD04_2223_Coupon_at_Till); -- only 231 are in selection file
 select count (ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Standard_DM' and ec_id in (select ec_id from TD04_2223_Standard_DM); -- 29 in the selection file
+select count (ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Petrol_DM' and ec_id in (select ec_id from TD04_2223_Petrol_DM); -- 9 in the selection file
 
 -- Example of where there is two coupon redemptions:
 -- select * from instore_pounds_TD04 where ec_id = '50000000178390';
@@ -145,7 +160,7 @@ select count (ec_id) from multiple_redeemptions where campaign = 'TD04_2223_Stan
 -- TD04_2223_Petrol_DMb
 -- TD04_2223_Coupon_at_Till
 
-
+select * from TP_TD04_barcode_all;
 
 // POINTS //
 
@@ -200,7 +215,7 @@ select ec_id, transaction_identifier,campaign from instore_points_TD04 where ec_
 // Total transactions //
 
 create or replace temp table campaign_crossover as
-select a.ec_id,
+select distinct a.ec_id,
        a.transaction_identifier,
        a.campaign as point_campaign,
        b.campaign as pounds_campaign,
@@ -210,6 +225,7 @@ from instore_points_TD04 as a
 FULL OUTER JOIN instore_pounds_TD04 as b
 on a.ec_id = b.ec_id and a.transaction_identifier = b.transaction_identifier
 group by 1,2,3,4;
+-- 960,129
 
 // count of customers that have redeemed in more than one campaign in the same transaction //
 select sum(count_point) as count_points,
@@ -218,6 +234,14 @@ select sum(count_point) as count_points,
        pounds_campaign
 from campaign_crossover
 group by 3,4;
+
+select ec_id,
+       count_point,
+       count_pound,
+       point_campaign,
+       pounds_campaign
+from campaign_crossover;
+
 
 
 
@@ -229,16 +253,16 @@ Select distinct ec_id
 from TD04_2223_Coupon_at_Till
 where ec_id in (select distinct ec_id
 from TD04_2223_Standard_DM
-where ec_id not in (select ec_id from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."TD04_OPTOUT");
+where ec_id not in (select ec_id from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."TD04_OPTOUT"));
 -- 1,961 in both CAT & DM
 
 select * from CAT_in_DM; -- zero - no cross over between CAT & DM
 
 // Checking that optouts in DMs //
 select ec_id
-from TD04_2223_standard_DM
+from TD04_2223_petrol_DM
 where ec_id in (select ec_id from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."TD04_OPTOUT")
--- 333 in Standard, 1197 in petrol
+-- 333 in petrol, 1197 in standard
 
 
 // selecting CAT in DM //
@@ -309,3 +333,22 @@ where ec_id in (select ec_id from td04_2223_triple_points);
 select count (*) from td04_2223_Petrol_DM
 where ec_id in (select ec_id from td04_2223_flash_email);
 -- 89050
+
+
+
+create or replace temp table campaign_selection as
+    select ec_ID,
+           case when ec_ID in (select ec_id from td04_2223_Petrol_DM where target_control_flag=1) then 1 else 0 end as In_Petrol_DM,
+           case when ec_ID in (select ec_id from td04_2223_Standard_DM where target_control_flag=1) then 1 else 0 end as In_Standard_DM,
+           case when ec_ID in (select ec_id from td04_2223_coupon_at_till where target_control_flag=1) then 1 else 0 end as In_CAT,
+           case when ec_ID in (select ec_id from td04_2223_Triple_points where target_control_flag=1) then 1 else 0 end as In_Triple_Points,
+           case when ec_ID in (select ec_id from td04_2223_Flash_email where target_control_flag=1) then 1 else 0 end as In_Flash
+from td04_2223_Petrol_DM;
+
+select count (distinct ec_ID)
+from campaign_selection
+where In_Petrol_DM =1
+
+
+
+

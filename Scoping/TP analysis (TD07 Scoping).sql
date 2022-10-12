@@ -335,6 +335,12 @@ select count(distinct ec_id) as redeemers,
 from instore_points_TD01
 
 
+select count(ec_id), count(distinct ec_id) from instore_points_TD01;
+select ec_id, count(*) as count from instore_points_TD01 group by 1;
+select * from instore_points_TD01 where ec_id = '50000001354867';
+
+
+
 
 -- select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_chrh_campaign_ec limit 5;
 -- select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_fact_ec limit 100;
