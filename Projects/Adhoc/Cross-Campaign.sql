@@ -235,6 +235,7 @@ select sum(count_point) as count_points,
 from campaign_crossover
 group by 3,4;
 
+
 select ec_id,
        count_point,
        count_pound,
