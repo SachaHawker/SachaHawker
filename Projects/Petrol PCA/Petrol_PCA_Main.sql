@@ -1767,22 +1767,12 @@ order by count_of_campaigns_received;
 --              group by 1,2,5,6,7;
 
 
-select * from eDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction_line where unit_of_measure = 'L' limit 50;
-select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line order by payment_value desc limit 5; where transaction_number = '7393' and party_account_ID = '994491670220813' limit 5;
 
-
-select count(ec_ID), count(distinct ec_ID) from TD08_2122_CAT_redemption4;
-
-Select count(ec_id), count(distinct EC_ID) from fuel_litres;
-
---
-select * from fuel_litres
-order by ec_id desc;
 
 create or replace temp table fuel_litres as
 select distinct a.ec_id, b.fuel_litres,b.fuel_spend, a.payment_value,b.week_no, a.redeem_qty, a.red_date, b.party_account_id, row_number() over (partition by a.ec_ID order by a.red_date asc) as row_number
-from TD09_2122_CAT_redemption4 a
-         left join (select distinct
+from TD06_2223_CAT_redemption4 a
+         inner join (select distinct
                         pa.enterprise_customer_id as ec_id,
                                     pa.party_account_id,
                         case when stl. party_account_type_code= '04' then 'Instore'
@@ -1818,6 +1808,7 @@ from TD09_2122_CAT_redemption4 a
                       and dat.calendar_date=stl.transaction_date
                       and pa.party_account_id=stl.party_account_id
 
+
 --                       and dat.week_no between (select min(pre_period_start_fw) from pre_period_start) and $reporting_week
 
                         /*ONLY petrol category*/
@@ -1826,185 +1817,54 @@ from TD09_2122_CAT_redemption4 a
                     group by 1,2,3,4,5,6,7) as b
 on a.ec_id = b.ec_id
 and a.fin_week = b.week_no
-and a.red_date = b.transaction_date;
+and a.red_date = b.transaction_date
+and a.transaction_value = b.fuel_spend;
 
-
-select distinct
-                        pa.enterprise_customer_id as ec_id,
-                                    pa.party_account_id,
-                        case when stl. party_account_type_code= '04' then 'Instore'
-                             when stl.party_account_type_code = '02' then 'Online' end as channel,
-                        dat.week_no,
-                                    stl.transaction_date,
-                        sum(stl.item_weight) as fuel_litres,
-                        sum(stl.extended_price) as fuel_spend
-
-
-                    from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction_line as stl,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_location_map as lm,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_ean as ean,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_sku_map as sku,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_sub_category_map as scat,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line as pay,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_DATE_MAP as dat,
-                         EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT as pa
-
-
-                    where stl.location_key = lm.location_key
-                      and lm.js_petrol_ind <> 'N'
-                      and stl.ean_key = ean.ean_key
-                      and ean.sku_key = sku.sku_key
-                      and sku.sub_category_key = scat.sub_category_key
-                      and stl.party_account_id=pay.party_account_id
-                      and stl.party_account_type_code=pay.party_account_type_code
-                      and stl.transaction_date=pay.transaction_date
-                      and stl.transaction_time=pay.transaction_time
-                      and stl.transaction_number=pay.transaction_number
-                      and stl.location_key=pay.location_key
-                      and stl.till_number=pay.till_number
-                      and dat.calendar_date=stl.transaction_date
-                      and pa.party_account_id=stl.party_account_id
-
---                       and dat.week_no between (select min(pre_period_start_fw) from pre_period_start) and $reporting_week
-
-                        /*ONLY petrol category*/
-                      and scat.sub_category = 839
-                      and stl.unit_of_measure = 'L'
-and ec_id = '50000023864761'
-and stl.transaction_date = '2022-01-03'
-                    group by 1,2,3,4,5,6,7
-
-
-
-
-select * from TD09_2122_CAT_Redemption4 where  ec_id = '50000023864761';
-
-select ec_id, fuel_litres, fuel_spend, payment_value, row_number
-from fuel_litres a
-where ec_id = '50000023864761'
-Order by EC_ID asc;
-
-select * from fuel_litres where ec_id = '50000023864761';
-
---50000016687704
-
-
---
--- create or replace temp table litre_red as
--- select a.ec_ID,
---        stl. item_weight,
---        row_number() over (partition by a.ec_ID order by a.red_date asc) as row_number,
---        a.redeem_qty
--- from TD08_2122_CAT_Redemption4 a
--- left join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction_line as stl
--- on a.sr_ID = stl.Party_account_id
--- and a.red_date = stl.transaction_date
--- where stl.unit_of_measure = 'L';
-
+-- those that redeem once
 create or replace temp table redeemed_once as
 select ec_id,
        sum(redeem_qty) as sum_redeem_qty
-       from TD09_2122_CAT_Redemption4
+       from TD06_2223_CAT_Redemption4
 group by 1
 having sum_redeem_qty =1;
--- 7,711
 
 
+-- those that redeemed twice
 create or replace temp table redeemed_twice as
 select ec_id,
        sum(redeem_qty) as sum_redeem_qty
-       from TD09_2122_CAT_Redemption4
+       from TD06_2223_CAT_Redemption4
 group by 1
 having sum_redeem_qty =2;
--- 1,948
-
-select avg(fuel_litres), row_number
-from fuel_litres
-where ec_id in (select ec_id from redeemed_once)
-group by 2;
 
 
-select * from fuel_litres
-where ec_id in (select ec_id from redeemed_once) and row_number =2;
 
-select * from fuel_litres where ec_id = '50000023864761';
-select * from TD09_2122_CAT_Redemption4 where ec_id = '50000023864761';
-
+-- avg fuel of those that redeemed once
 select row_number, avg(fuel_litres)
 from fuel_litres
 where ec_id in (select ec_id from redeemed_once)
 group by 1;
 
+-- select * from fuel_litres where ec_id in (select ec_id from redeemed_once) and row_number <>1;
+-- select * from fuel_litres where ec_id = '50000007692152';
+-- select * from td05_2223_CAT_redemption4 where ec_id = '50000007692152';
 
+
+-- avg fuel of those that redeemed twice
 select row_number, avg(fuel_litres)
 from fuel_litres
 where ec_id in (select ec_id from redeemed_twice)
-group by 1;
+group by 1
+order by row_number asc;
 
+select count(*) from td01_2223_Petrol_DM; where instoreoffercode1 like 'SPET4%';
+select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_chrh_campaign_ec where flowchartid = '464646';
+select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_fact_ec where flowchartid = '464646';;
+select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_ch_offer_attribute_ec  where treatmentcode = '069735634'
 
+select * from tD04_2223_Barcodes1;
+C000002405
 
-select row_number, avg(fuel_litres) from fuel_litres group by 1 order by row_number asc;
+475367
 
-
-
-
-
-
--- select count(a.ec_ID)
--- from TD08_2122_CAT_redemption4 a
---          left join (select distinct
---                         pa.enterprise_customer_id as ec_id,
---                         case when stl.party_account_type_code = '04' then 'Instore'
---                              when stl.party_account_type_code = '02' then 'Online' end as channel,
---                         dat.week_no,
---                         sum(stl.item_weight) as fuel_litres,
---                         sum(stl.extended_price) as fuel_spend
---
---                     from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction_line as stl,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_location_map as lm,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_ean as ean,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_sku_map as sku,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_sub_category_map as scat,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line as pay,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_DATE_MAP as dat,
---                          EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_PARTY_ACCOUNT as pa
---
---
---                     where stl.location_key = lm.location_key
---                       and lm.js_petrol_ind <> 'N'
---                       and stl.ean_key = ean.ean_key
---                       and ean.sku_key = sku.sku_key
---                       and sku.sub_category_key = scat.sub_category_key
---                       and stl.party_account_id=pay.party_account_id
---                       and stl.party_account_type_code=pay.party_account_type_code
---                       and stl.transaction_date=pay.transaction_date
---                       and stl.transaction_time=pay.transaction_time
---                       and stl.transaction_number=pay.transaction_number
---                       and stl.location_key=pay.location_key
---                       and stl.till_number=pay.till_number
---                       and dat.calendar_date=stl.transaction_date
---                       and pa.party_account_id=stl.party_account_id
---
--- --                       and dat.week_no between (select min(pre_period_start_fw) from pre_period_start) and $reporting_week
---
---                         /*ONLY petrol category*/
---                       and scat.sub_category = 839
---                       and stl.unit_of_measure = 'L'
---                     group by 1,2,3) as b
--- on a.ec_id = b.ec_id
--- where a.fin_week = b.week_no;
---13564
---
--- select count(ec_ID) from td08_2122_CAT_redemption4
--- -- 13565
-
--- select ec_id
--- from td08_2122_CAT_redemption4
--- where ec_id not in (select ec_id from fuel_litres);
---
--- select * from td08_2122_CAT_redemption4
--- where ec_id = '50000098267301'
-
-
-
-
+s

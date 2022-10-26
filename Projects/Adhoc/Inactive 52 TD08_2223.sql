@@ -1,4 +1,4 @@
--- Ran by Sacha Hawker on 21/09/2022 for TD08 DM
+-- Ran by Sacha Hawker on 21/09/2022 for td08 DM
 -- translated to sql by Erica Jackson 02/11/2021
 
 /*Created by: Carol Brook on 28Jun2019
@@ -236,7 +236,7 @@ from inactive26w_with_ecid as a
 ;
 
 -- save to CAMPAIGN_01
-create or replace table EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD08_2223_26WK_INACTIVE_CUSTOMERS as
+create or replace table EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD09_2223_26WK_INACTIVE_CUSTOMERS as
 select party_account_id, enterprise_customer_id, household_id, week_no as last_week_active, jsgroc_dm,
        avg_transaction_value_12wkpriori as avg_transaction_value_12wk_prior_instore,
 
@@ -256,13 +256,13 @@ from inactive26w_with_ecid_and_contactability
 
 
 select last_week_active, count(distinct enterprise_customer_id)
-from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD08_2223_26WK_INACTIVE_CUSTOMERS
+from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD09_2223_26WK_INACTIVE_CUSTOMERS
 where jsgroc_dm in ('Y', 'LI', 'LIN')
 group by 1
 ;
 
 
-select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD08_2223_26WK_INACTIVE_CUSTOMERS
+select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_td09_2223_26WK_INACTIVE_CUSTOMERS
 where jsgroc_dm in ('Y', 'LI', 'LIN');
 
 // Volumes //
@@ -270,7 +270,7 @@ where jsgroc_dm in ('Y', 'LI', 'LIN');
 -- Total minus 10% control: 612,977
 
 select count (distinct a.enterprise_customer_id)
-from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD08_2223_26WK_INACTIVE_CUSTOMERS a
+from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_td09_2223_26WK_INACTIVE_CUSTOMERS a
 inner join  "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT" b
 on a.enterprise_customer_id = b.ec_id
 where jsgroc_dm in ('Y', 'LI', 'LIN')
@@ -281,5 +281,5 @@ and LMS_status_code in ('AC', 'A');
 
 
 
-select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_TD08_2223_26WK_INACTIVE_CUSTOMERS where enterprise_customer_id = '50000000331176';
-select * from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT";
+select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.TD_td09_2223_26WK_INACTIVE_CUSTOMERS where enterprise_customer_id = '50000000331176';
+select * from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT"
