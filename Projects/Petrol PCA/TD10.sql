@@ -4,7 +4,6 @@ USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
 
-
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
 create or replace table td_date_and_campaign_map_SH as
                       select a.fin_year,
@@ -360,7 +359,7 @@ on a.ec_id = b.ec_id
 where offer_cell not like 'SPET%'
 Group by 1,2,4,5,6,7,8,9,10;
 Select * from TD10_MO_DM_Redemptions
-Select count(ec_id) as vol, redeem_qty as redemptions from TD10_MO_DM_Redemptions group by 2
+Select count(ec_id) as vol, redeem_qty as redemptions from TD10_MO_DM_Redemptions group by 2;
 -- 22284
 
 select * from TD10_DM_Redemptions1 where redeem_qty >= 2
@@ -614,7 +613,7 @@ red rate = print vol / redemptions (CAT)
 
 Select * from petrol_backup_prints;
 
+// to Macro table names :
 
-
-
+set xxxxx table = concat('CUSTOMER_ANALYTICS.TD_REPORTING.',$td,'_',$year,'_xxxxxxxx')
 

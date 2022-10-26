@@ -31,6 +31,7 @@ create or replace temp table td_date_and_campaign_map_TD04 as
                  and a.week_end >= '2022-07-17'
                  and campaign_type = 'Triple_Points';
 
+select * from td_date_and_campaign_map_TD04;
 
 -- create barcode
 create or replace temp table TP_TD04_barcode as
@@ -113,8 +114,6 @@ select count(distinct ec_id) as redeemers,
        sum(payment_value)/count(distinct ec_id) as points_cost_PC,
        sum(payment_value/0.00425)/count(distinct ec_id) as points_PC
 from instore_points_TD04;
-
-
 
 // TD02 //
 -- Make my own campaign map
@@ -334,6 +333,12 @@ select count(distinct ec_id) as redeemers,
        sum(payment_value)/count(distinct ec_id) as points_cost_PC,
        sum(payment_value/0.00425)/count(distinct ec_id) as points_PC
 from instore_points_TD01
+
+
+select count(ec_id), count(distinct ec_id) from instore_points_TD01;
+select ec_id, count(*) as count from instore_points_TD01 group by 1;
+select * from instore_points_TD01 where ec_id = '50000001354867';
+
 
 
 

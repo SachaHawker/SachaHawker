@@ -1,0 +1,246 @@
+--
+--
+-- -- select * from "EDWS_PREPROD"."PROD_CMT_PRESENTATION"."VW_CA_ONLINE_CUSTOMER" limit 5;
+--
+--
+--
+-- --     select * from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG"
+-- -- where hashed_loyalty_id not in (select hashed_loyalty_id from Hashed_RF) and bank_segment in ('GO','PL') and points_flag=1
+--
+--
+--
+-- -- Create or replace temp table lookup as
+-- --     select a.*,
+-- --            b.instore_accounts,
+-- --            b.party_account_no,
+-- --            b.sha2(cast(party_account_no as varchar(50)), 256) as hashed_loyalty_id,
+-- --            b.party_account_type_code
+-- --     from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" as a
+-- --     left join EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES as b
+-- -- on a.hashed_loyalty_ID = b.hashed_loyalty_id;
+--
+--
+-- // Tables //
+--
+-- -- select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES limit 50;
+-- -- select * from  TD_REPORTING.TD_EXPERIMENTAL_JOURNEYS limit 5;
+-- -- select count(*) from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" where bank_segment in ('GO','PL') and points_flag = 1
+--
+-- -- select count(*) from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES where instore_accounts >=1 and party_account_type_code = '02';;
+-- --
+-- -- select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES where party_account_type_code <> '04' limit 5;
+-- -- select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction where party_account_type_code <> '04' ;
+-- -- select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction where party_account_ID like '400%';
+-- --
+--
+--
+-- -- 04 party account types: 4th in and 11 long
+-- -- 02 party account types: 6th in and 9 long (20000106320243 - 106320243)
+--
+-- -- select * from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."DIG_NECTAR_SEGMENTATION" limit 5;
+-- --
+-- -- select * from customer_analytics.production.cvu_digital_nectar_engagement_segmentation limit 5;
+--
+-- -- select * from TD_REPORTING.TD_EXPERIMENTAL_JOURNEYS;
+-- --
+-- --
+-- -- select * from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."DIG_NECTAR_SEGMENTATION" limit 5;
+-- -- select * from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."REGISTERED_HASHED_SRID" limit 30;
+--
+--
+-- // Those that are in online //
+-- --
+-- -- select
+-- -- *
+-- -- from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_ONLINE_CUSTOMER"
+-- -- where hashed_loyalty_id in
+-- --  (select sha2(cast(substr(loyalty_card_number,9,11) as varchar(50)), 256) as hashed_loyalty_id
+-- -- from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_ONLINE_CUSTOMER")
+-- -- and bank_segment in ('GO', 'PL') and points_flag = 1;
+--
+--
+-- -- create or replace temp table online_customers as
+-- -- select hashed_loyalty_id, count(hashed_loyalty_id) as count from Not_in_Ranking_file
+-- -- where hashed_loyalty_ID in (select sha2(cast(substr(loyalty_card_number,9,11) as varchar(50)), 256) as hashed_loyalty_id
+-- -- from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_ONLINE_CUSTOMER")
+-- -- group by 1;
+-- -- -- 728 in online
+--
+--
+-- -- select a.hashed_loyalty_id,
+-- --        b.party_account_type_code
+-- --            from online_customers as a
+-- --     INNER JOIN "EDWS_PREPROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT" as b
+-- --         on a.hashed_loyalty_id = sha2(cast(b.party_account_no as varchar(50)), 256)
+-- -- order by party_account_type_code asc;
+-- --
+-- --
+-- --
+-- -- select a.hashed_loyalty_id,
+-- --        b.*
+-- --        from online_customers as a
+-- --        inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction as b
+-- -- on a.hashed_loyalty_id = sha2(cast(substr(b.party_account_id,4,11) as varchar(50)), 256);
+-- -- select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction;
+-- --
+-- -- select * from Not_in_Ranking_file;
+-- --
+-- -- select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction;
+-- -- select * from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY" limit 20;
+-- --
+-- --
+-- -- select hashed_loyalty_id
+-- -- from Not_in_Ranking_file
+-- -- where hashed_loyalty_Id in (select sha2(cast(substr(nectar_party_account_id,4,11) as varchar(50)), 256) as hashed_loyalty_id from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY");
+--
+--
+-- -- select sha2(cast(substr(a.party_account_id,4,11) as varchar(50)), 256) as hashed_loyalty_id, c.sku_desc, a.party_account_id, a.transaction_date,a.party_account_type_code
+-- -- from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SHOPPING_TRANSACTION_LINE a
+-- -- inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_EAN as b
+-- --     on a.ean_key = b.ean_key
+-- -- inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SKU_MAP as c
+-- -- on b.sku_key = c.sku_key
+-- -- where hashed_loyalty_id = '53ec21264f612a97fb9270d829615b7450c493d516183534839d9099f839fdf3'
+-- -- order by transaction_date desc limit 10;
+--
+--
+--
+-- --
+-- -- select *, sha2(cast(substr(party_account_id,4,11) as varchar(50)), 256) as hashed_loyalty_id
+-- -- from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction
+-- -- where hashed_loyalty_id = '748fc01b7aa043083b4dc4bbacfde1df6f328ddb5a36b2936dc6b9c68690ebbc'
+-- -- order by transaction_date desc;
+--
+--
+-- -- select distinct hashed_loyalty_id from  "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG"
+-- -- where hashed_loyalty_id in (select distinct loyalty_id from adw_prod.INC_PL.CUSTOMER_DIM)
+-- -- ;
+-- --
+-- --
+-- --
+-- -- select * from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY"
+-- -- where sha2(cast(substr(nectar_party_account_id,4,11) as varchar(50)), 256) = '16759fc524752f77e75cdea6a39e9a18737fdbc1213d73e4d265c862664d1c84';
+-- -- --
+-- -- -- select * from adw_prod.INC_PL.CUSTOMER_DIM where loyalty_id is not null limit 5;
+-- -- -- select * from adw_prod.inc_pl.transaction_dim limit 5;
+-- -- -- select * from ADW_PROD.INC_PL.DATE_DIM limit 5;
+--
+--
+--
+--
+--
+-- -- select hashed_loyalty_id
+-- -- from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG"
+-- -- where hashed_loyalty_ID not in (select hashed_loyalty_id from Hashed_RF);
+-- -- and hashed_loyalty_id not in (select sha2(cast(substr(nectar_party_account_id,4,11) as varchar(50)), 256) as hashed_loyalty_ID from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY")
+-- -- and bank_segment in ('GO', 'PL') and points_flag=1;
+--
+--
+--
+--
+--
+-- // those that are online shoppers from not in ranking file //
+-- create or replace temp table online_customers as
+-- select
+--        count(a.hashed_loyalty_ID) as count,
+--        hashed_loyalty_id
+--        from Not_in_Ranking_file a
+-- inner join "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY" b
+-- on a.hashed_loyalty_Id = sha2(cast(substr(b.nectar_party_account_id,4,11) as varchar(50)), 256)
+-- where hashed_loyalty_id not in (select hashed_loyalty_id from shopped_over_26weeks)
+-- group by 2;
+--
+-- select count (distinct hashed_loyalty_id) from online_customers;
+-- -- 126 not in
+-- -- 605 in
+--
+-- select a.hashed_loyalty_id, b.party_account_type_code
+-- from Not_in_Ranking_file as a
+-- inner join "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT" as b
+-- on a.hashed_loyalty_Id = sha2(cast(b.party_account_no as varchar(50)), 256);
+--
+--
+-- select * from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_CUSTOMER_ACCOUNT";
+--
+--
+-- select count(distinct hashed_loyalty_id) from TD_REPORTING.online_customers;
+-- --732
+--
+-- select * from "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_CA_OL_TRANS_SUMMARY" limit 5;
+--
+--
+-- -- over 26 week shopper --
+-- create or replace temp table over_26wk_shopper as
+-- select hashed_loyalty_Id,
+--        count(hashed_loyalty_id) as count
+-- from Not_in_Ranking_file
+-- where hashed_loyalty_id not in (select hashed_loyalty_id from online_customers)
+-- group by 1;
+-- -- 351 not in online
+--
+--
+-- create or replace temp table online_and_instore as
+--     select a.party_account_no,
+--            a.enterprise_customer_ID,
+--            a.segment,
+--            b.hashed_loyalty_id,
+--            b.bank_segment,
+--            b.points_flag,
+--            a.instore_accounts,
+--            a.online_accounts,
+--            c.journey_instore,
+--            a.party_account_type_code
+-- from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES as a
+-- inner join "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG" as b
+-- on sha2(cast(a.party_account_no as varchar(50)), 256) = b.hashed_loyalty_id
+--     left join TD_REPORTING.TD_EXPERIMENTAL_JOURNEYS as c
+--     on a.enterprise_customer_ID = c.enterprise_customer_ID
+-- where b.bank_segment in ('GO','PL') and b.points_flag = '1' and a.online_accounts >=1;
+--
+-- select * from online_and_instore order by instore_accounts asc;
+--
+-- //total in the dig-nectar-seg//
+-- select count(distinct hashed_loyalty_id) as count
+-- from Card_customers_13_9_22_RF
+-- where hashed_loyalty_id in
+--       (select sha2(cast(b.party_account_no as varchar(50)), 256) as hashed_loyalty_id
+--       from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."DIG_NECTAR_SEGMENTATION" as a
+--       inner join EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES as b
+--       on a.ec_id = b.enterprise_customer_id);
+-- -- 15628
+--
+-- -- create or replace table Not_in_Ranking_file_online as
+-- -- select hashed_loyalty_id, party_account_type_code
+-- -- from "CUSTOMER_ANALYTICS"."DEVELOPMENT"."BANK_CREDIT_CARD_CUSTOMERS_WITH_FLAG"
+-- -- where hashed_loyalty_ID in (select sha2(cast(party_account_no as varchar(50)), 256) as hashed_loyalty_id
+-- --  from EDWS_PROD.PROD_CMT_CAMPAIGN_01.RANKING_FILE_SR_NODUPES where online_accounts >=1 and instore_accounts =0)
+-- -- and bank_segment in ('GO', 'PL') and points_flag=1;
+--
+--
+-- -- check that those 'over 26wk shopper' hasn't shopped in last 26 weeks --
+-- select a.hashed_loyalty_Id,
+--        b.transaction_date
+-- from over_26wk_shopper a
+-- inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction b
+-- on a.hashed_loyalty_Id = sha2(cast(substr(b.party_account_id,4,11) as varchar(50)), 256)
+-- order by transaction_date desc;
+--
+-- // example of supposed over 26wk shopper but has actually shopped recently //
+-- select *, sha2(cast(substr(party_account_id,4,11) as varchar(50)), 256) as hashed_loyalty_id from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction where hashed_loyalty_id = '73cc86829482a5235a20965fc9774920fa3fd11c37b2be57042872d3a9650144' order by transaction_date desc;
+--
+-- // but its not in the ranking file //
+-- select * from Hashed_RF where hashed_loyalty_id = '01ec1bc329374dfde271e99a6f16a0c3860e0635882a0f9f99cd0a398f51b36a';
+--
+-- select * from over_26wk_shopper;
+--
+-- --
+-- -- select sha2(cast(substr(a.party_account_id,4,11) as varchar(50)), 256) as hashed_loyalty_id, c.sku_desc, a.party_account_id
+-- -- from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SHOPPING_TRANSACTION_LINE a
+-- -- inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_EAN as b
+-- --     on a.ean_key = b.ean_key
+-- -- inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SKU_MAP as c
+-- -- on b.sku_key = c.sku_key
+-- -- where hashed_loyalty_id = '01ec1bc329374dfde271e99a6f16a0c3860e0635882a0f9f99cd0a398f51b36a'
+-- -- and a.transaction_date = '2022-09-11';
+--
+--
