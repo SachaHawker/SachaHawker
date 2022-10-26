@@ -159,16 +159,16 @@ select * from TD_REPORTING.cc_bank_where_SOW1 where loyalty_seg in ('GO','PL') -
 select * from TD_REPORTING.cc_bank_where_SOW1 where loyalty_seg not in ('GO','PL') --26 // Not GO & PL cusotmers//
 select * from TD_REPORTING.cc_bank_where_SOW1 where loyalty_seg is null -- 69 // Null customers //
 
-//Example: Get EC_ID from SOW table (those that apparently don't have any transactions //
-select customer_key from ADW_PROD.INC_PL.customer_DIM where inferred_customer_id = sha2(cast( '50000021045491' as varchar(50)), 256)
-
-// Plug this into two different transaction tables //
-select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SHOPPING_TRANSACTION where party_account_id ='40061933195032'
--- no transactions
-Select * from ADW_PROD.INC_PL.TRANSACTION_DIM where customer_key = '31dd1474b22d23983ad7f3e82c3a70582eeeffd2d8c95e7d1ef5927abe4d9162';
--- transactions in the last 26 weeks
-
-// Table of those that supposedly haven't had transactions //
+-- //Example: Get EC_ID from SOW table (those that apparently don't have any transactions //
+-- select customer_key from ADW_PROD.INC_PL.customer_DIM where inferred_customer_id = sha2(cast( '50000021045491' as varchar(50)), 256)
+--
+-- // Plug this into two different transaction tables //
+-- select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SHOPPING_TRANSACTION where party_account_id ='40061933195032'
+-- -- no transactions
+-- Select * from ADW_PROD.INC_PL.TRANSACTION_DIM where customer_key = '31dd1474b22d23983ad7f3e82c3a70582eeeffd2d8c95e7d1ef5927abe4d9162';
+-- -- transactions in the last 26 weeks
+--
+-- // Table of those that supposedly haven't had transactions //
 Create or replace temp table transactions as
 select c.*, a.loyalty_seg, a.ec_id, a.sr_id
 from TD_REPORTING.cc_bank_where_SOW1 a
@@ -183,7 +183,7 @@ create or replace temp table transactions_in_26w as
 select distinct customer_key, loyalty_seg, ec_id, sr_id from transactions where date_key >= '2022-03-15';
 -- 17 customers have shopped in last 26 weeks
 
-// these customers haven't shopped in the shopping transaction table but have in transaction dim table //
+-- // these customers haven't shopped in the shopping transaction table but have in transaction dim table //
 select a.ec_id, a.loyalty_seg
 from transactions_in_26w as a
 inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SHOPPING_TRANSACTION as b
