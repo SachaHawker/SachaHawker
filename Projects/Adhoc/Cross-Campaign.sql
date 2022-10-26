@@ -243,9 +243,21 @@ select ec_id,
        pounds_campaign
 from campaign_crossover;
 
+select * from campaign_crossover;
+Select count(ec_ID), count(distinct ec_id) from campaign_crossover where count_point =1 and count_pound = 1;
+Select count(ec_ID), count(distinct ec_id) from campaign_crossover where point_campaign ='TD04_2223_Triple_Points' and pounds_campaign = 'TD04_2223_Coupon_at_Till';
 
+create or replace temp table test as
+    Select * from campaign_crossover where point_campaign ='TD04_2223_Triple_Points' and pounds_campaign = 'TD04_2223_Coupon_at_Till';
 
+select ec_id, sum(count_pound), sum(count_point) from test group by 1;
 
+--50000025447109
+--50000099365404
+--50000010965582
+select * from campaign_crossover where ec_id = '50000025447109'
+
+select count(distinct ec_id) from Td04_2223_Petrol_DM;
 
 // IF CUSTOMERS ARE IN MORE THAN ONE CAMPAIN EACH PERIOD //
 // confirming no crossover between DM and CAT
@@ -282,74 +294,101 @@ Select distinct ec_id from TD04_2223_Coupon_at_Till where ec_id  in (select dist
 
 // FE, SDM, TP //
 select count (*) from td04_2223_flash_email
-where ec_id in (select ec_id from td04_2223_triple_points)
-  and  ec_id in (select ec_id from  td04_2223_standard_DM);
---77107
+where ec_id in (select ec_id from td04_2223_triple_points where target_control_flag=1)
+  and  ec_id in (select ec_id from  td04_2223_standard_DM where target_control_flag=1)
+and target_control_flag=1;
+--56151
 
 
 // FE, SDM//
 select count (*) from td04_2223_flash_email
-where ec_id in (select ec_id from  td04_2223_standard_DM);
---153973
+where ec_id in (select ec_id from  td04_2223_standard_DM where target_control_flag=1)
+and target_control_flag=1;
+--124897
 
 // TP, SDM//
 select count (*) from td04_2223_triple_points
-where ec_id in (select ec_id from  td04_2223_standard_DM);
---890709
+where ec_id in (select ec_id from  td04_2223_standard_DM where target_control_flag=1)
+and target_control_flag=1;
+--721419
+
+select count (*) from td04_2223_standard_DM
+where ec_id in (select ec_id from  td04_2223_triple_points where target_control_flag=1)
+and target_control_flag=1;
+
+select count(distinct a.ec_id), count(distinct b.ec_id) from
+td04_2223_standard_DM as a
+inner join td04_2223_triple_points as b
+on a.ec_id = b.eC_id
+where a.target_control_flag = 1 and b.target_control_flag=1;
+
+select count(distinct a.ec_id), count(distinct b.ec_id) from
+td04_2223_petrol_DM as a
+inner join td04_2223_flash_email as b
+on a.ec_id = b.eC_id
+where a.target_control_flag = 1 and b.target_control_flag=1;
+
+
 
 // FE, CAT, TP //
 select count (*) from td04_2223_flash_email
-where ec_id in (select ec_id from td04_2223_triple_points)
-  and  ec_id in (select ec_id from  td04_2223_coupon_at_till);
---288993
+where ec_id in (select ec_id from td04_2223_triple_points where target_control_flag=1)
+  and  ec_id in (select ec_id from  td04_2223_coupon_at_till where target_control_flag=1)
+and target_control_flag=1;
+--210699
 
 // FE, CAT //
 select count (*) from td04_2223_flash_email
-where ec_id in (select ec_id from  td04_2223_coupon_at_till);
---288993
+where ec_id in (select ec_id from  td04_2223_coupon_at_till where target_control_flag=1)
+and target_control_flag=1;
+--341005
 
 // TP, CAT //
 select count (*) from td04_2223_coupon_at_till
-where ec_id in (select ec_id from  td04_2223_triple_points);
---1729673
+where ec_id in (select ec_id from  td04_2223_triple_points where target_control_flag=1)
+and target_control_flag=1 ;
+--1400974
 
 // FE, TP //
 select count (*) from td04_2223_flash_email
-where ec_id in (select ec_id from td04_2223_triple_points);
--- 829844
+where ec_id in (select ec_id from td04_2223_triple_points where target_control_flag=1)
+and target_control_flag=1;
+-- 671846
 
 
 // FE, PDM, TP //
 select count (*) from td04_2223_flash_email
-where ec_id in (select ec_id from td04_2223_triple_points)
-  and  ec_id in (select ec_id from  td04_2223_Petrol_DM);
---61246
+where ec_id in (select ec_id from td04_2223_triple_points where target_control_flag=1)
+  and  ec_id in (select ec_id from  td04_2223_Petrol_DM where target_control_flag=1)
+and target_control_flag=1;
+--44733
 
 // PDM, TP //
 select count (*) from td04_2223_Petrol_DM
-where ec_id in (select ec_id from td04_2223_triple_points);
--- 215271
+where ec_id in (select ec_id from td04_2223_triple_points where target_control_flag=1)
+and target_control_flag=1;
+-- 174206
 
 // PDM, FE //
 select count (*) from td04_2223_Petrol_DM
-where ec_id in (select ec_id from td04_2223_flash_email);
--- 89050
+where ec_id in (select ec_id from td04_2223_flash_email where target_control_flag=1)
+and target_control_flag=1;
+-- 72244
 
 
-
-create or replace temp table campaign_selection as
-    select ec_ID,
-           case when ec_ID in (select ec_id from td04_2223_Petrol_DM where target_control_flag=1) then 1 else 0 end as In_Petrol_DM,
-           case when ec_ID in (select ec_id from td04_2223_Standard_DM where target_control_flag=1) then 1 else 0 end as In_Standard_DM,
-           case when ec_ID in (select ec_id from td04_2223_coupon_at_till where target_control_flag=1) then 1 else 0 end as In_CAT,
-           case when ec_ID in (select ec_id from td04_2223_Triple_points where target_control_flag=1) then 1 else 0 end as In_Triple_Points,
-           case when ec_ID in (select ec_id from td04_2223_Flash_email where target_control_flag=1) then 1 else 0 end as In_Flash
-from td04_2223_Petrol_DM;
-
-select count (distinct ec_ID)
-from campaign_selection
-where In_Petrol_DM =1
-
+-- create or replace temp table campaign_selection as
+--     select ec_ID,
+--            case when ec_ID in (select ec_id from td04_2223_Petrol_DM where target_control_flag=1) then 1 else 0 end as In_Petrol_DM,
+--            case when ec_ID in (select ec_id from td04_2223_Standard_DM where target_control_flag=1) then 1 else 0 end as In_Standard_DM,
+--            case when ec_ID in (select ec_id from td04_2223_coupon_at_till where target_control_flag=1) then 1 else 0 end as In_CAT,
+--            case when ec_ID in (select ec_id from td04_2223_Triple_points where target_control_flag=1) then 1 else 0 end as In_Triple_Points,
+--            case when ec_ID in (select ec_id from td04_2223_Flash_email where target_control_flag=1) then 1 else 0 end as In_Flash
+-- from td04_2223_Petrol_DM;
+--
+-- select count (distinct ec_ID)
+-- from campaign_selection
+-- where In_Triple_Points =1;
 
 
+select count (distinct EC_ID) from td04_2223_Flash_email where target_control_flag =1
 
