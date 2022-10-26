@@ -40,7 +40,6 @@ select count(*) from cc_Card_customers_13_9_22_RF;
 --18254 bank customers in ranking file
 
 
-
 -- // WORK OUT WHO IS NOT IN THE RANKING FILE //
 create or replace temp table cc_not_in_rf as
     select a.*
