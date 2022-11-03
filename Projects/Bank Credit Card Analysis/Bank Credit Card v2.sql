@@ -117,6 +117,49 @@ group by 2;
 26,no
  */
 
+ -- 115
+
+
+50000011926481
+50000022300134
+50000023829740
+
+50000030965244
+
+select * from EDWS_PROD.PROD_CMT_PRESENTATION.VW_CA_CUSTOMER_ACCOUNT where ec_id = '50000022300134'
+
+ create or replace temp table cc_bank_gol as
+    select a.*, d.SR_ID as GOL_SR_ID, G_26WK_TOTVALUE, G_LASTORDERDATE
+    from bank_base as a
+    left join cc_bank_split1 c on a.SR_ID = c.SR_ID
+    inner join EDWS_PROD.PROD_CMT_PRESENTATION.VW_CA_CUSTOMER_ACCOUNT as d on a.FULL_NECTAR_CARD_NUM=d.FULL_NECTAR_CARD_NUM
+    inner join EDWS_PROD.PROD_CMT_PRESENTATION.VW_CA_OL_TRANS_SUMMARY as e on d.SR_ID=e.SR_ID
+    where c.SR_ID is null
+        and d.PARTY_ACCOUNT_TYPE_CODE='02';
+
+select * from cc_bank_gol;
+
+select count(*), count(distinct SR_ID) from cc_bank_gol;
+
+create or replace temp table cc_bank_gol_1 as
+select case when G_26WK_TOTVALUE > 100 then 'GOL' else 'no' end as gold_flag, *
+from cc_bank_gol;
+
+select * from cc_bank_gol_1
+
+select count(distinct SR_ID), gold_flag
+from cc_bank_gol_1
+group by 2;
+/*
+
+ --6552
+ */
+
+
+
+
+
+
 -- //what's missing - all people that are not in RF, not in shopping transactions and not in online
 create or replace temp table cc_bank_where1 as
     select a.*
