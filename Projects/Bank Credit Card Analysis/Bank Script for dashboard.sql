@@ -114,4 +114,3 @@ select  week_num,
 from    cc_bank_TRANS
 group by 1,2,3,4
 ;
-
