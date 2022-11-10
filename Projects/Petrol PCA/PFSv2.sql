@@ -12,7 +12,7 @@ select distinct sel.*,
                 fl.week_no,
                 fl.fuel_litres,
                 fl.fuel_spend
-from TD06_2223_Petrol_DM as sel
+from Petrol_52_minus_26_customers as sel
          inner join (
              -- Extracted from the Sales report
              select distinct
@@ -46,7 +46,7 @@ from TD06_2223_Petrol_DM as sel
                       and stl.till_number=pay.till_number
                       and dat.calendar_date=stl.transaction_date
                       and pa.party_account_id=stl.party_account_id
-                      and dat.CALENDAR_DATE between dateadd(week, -12, '2022-08-20') and '2022-08-20'
+                      and dat.CALENDAR_DATE between dateadd(week, -52, '2022-10-31') and dateadd(week, -26, '2022-10-31')
 
                         /*ONLY petrol category*/
                       and scat.sub_category = 839
@@ -54,12 +54,12 @@ from TD06_2223_Petrol_DM as sel
                       and lm.location not in (2835,2341,2158,897,2271,2241,2240,2051,847,2304,2254,2301,2070,2400) -- remove pay at pump
                     group by 1,2,3
 ) as fl
-                   on sel.ec_id = fl.ec_id
+                   on sel.enterprise_customer_id = fl.ec_id
 
 ;
---shopped fuel (non pay at pump) in past 12 weeks
+--shopped fuel (non pay at pump) in past 52 -26  weeks
 create or replace temp table fuel_spenders as
-select ec_id, 'Yes' Fuel_Spender, Count(*) Number_Of_Fuel_Shops, Sum(fuel_litres) Total_Litres_Bought, Sum(fuel_spend) Total_Fuel_Spend, Avg(fuel_spend) Avg_Fuel_Spend
+select enterprise_customer_id, 'Yes' Fuel_Spender, Count(*) Number_Of_Fuel_Shops, Sum(fuel_litres) Total_Litres_Bought, Sum(fuel_spend) Total_Fuel_Spend, Avg(fuel_spend) Avg_Fuel_Spend
 from fuel_spend_extract
 Group by 1;
 
@@ -73,27 +73,24 @@ Group by 1;
 
 -- Join Together
 
-create or replace temp table Petrol_T06 as
+create or replace temp table Petrol_PFS as
 Select
-a.ec_id
-, a.target_control_flag
+a.enterprise_customer_id
 , Case when b.PS_in_Fav_Store is not null then b.PS_in_Fav_Store else 'Fav store doesnt have a PFS' end as PFS_in_Main_Store
 , case when Fuel_Spender = 'Yes' then 'Yes' else 'No' end as FuelSpender
 , Number_Of_Fuel_Shops
      , Avg_Fuel_Spend
      , Total_Fuel_Spend
-     , Case when d.redeem_qty = '1' then 'redeemed' else 'Did not' end as Redeemed
 
-From TD06_2223_Petrol_DM a
-Left join pref_store_petrol b on a.ec_id = b.ec_id
-Left join fuel_spenders c on a.ec_id = c.ec_id
-Left join TD06_2223_CAT_Redemption4 d on a.ec_id = d.ec_id;
+From Petrol_52_minus_26_customers a
+Left join pref_store_petrol b on a.enterprise_customer_id = b.ec_id
+Left join fuel_spenders c on a.enterprise_customer_id = c.enterprise_customer_id;
 
 
 
 --Question 1. Of those selected for Petrol TD06, how many have a Petrol Station in their favourite store
 Select PFS_IN_MAIN_STORE, Count(*)
-From Petrol_T06
+From Petrol_PFS
 Group by 1;
 
 
@@ -119,6 +116,52 @@ From Petrol_T06
 Where Target_Control_Flag = 1
 Group by 1,2
 Order by 1,2;
+
+
+-- what volume of stretch & grow live within 8km of a PFS
+
+create or replace temp table Petrol_8km_close_to_pfs as
+    select distinct a.*,
+                    b.pfs_8km_flag,
+                    iff(b.distance<5, 1, 0) as pfs_5km_flag,
+                    iff(b.distance<4, 1, 0) as pfs_4km_flag,
+                    iff(b.distance<3, 1, 0) as pfs_3km_flag,
+                    iff(b.distance<2, 1, 0) as pfs_2km_flag,
+                    iff(b.distance<1, 1, 0) as pfs_1km_flag,
+                    b.store_name,
+                    b.postcode_store,
+                    b.postcode,
+                    b.distance
+from Petrol_52_minus_26_customers as a
+inner join customer_pfs_closeness_flag as b
+on a.enterprise_customer_id = b.ec_id
+where b.pfs_8km_flag = 1
+and b.store_cd not in (46838,20918,798,12769,17764,24062,24553,43311,937,19085,834,969,19836,2795) -- remove pay at pump
+;
+
+create or replace temp table Petrol_4km_close_to_pfs as
+    select distinct a.*,
+                    b.pfs_8km_flag,
+                    iff(b.distance<5, 1, 0) as pfs_5km_flag,
+                    iff(b.distance<4, 1, 0) as pfs_4km_flag,
+                    iff(b.distance<3, 1, 0) as pfs_3km_flag,
+                    iff(b.distance<2, 1, 0) as pfs_2km_flag,
+                    iff(b.distance<1, 1, 0) as pfs_1km_flag,
+                    b.store_name,
+                    b.postcode_store,
+                    b.postcode,
+                    b.distance
+from Petrol_52_minus_26_customers as a
+inner join customer_pfs_closeness_flag as b
+on a.enterprise_customer_id = b.ec_id
+where pfs_4km_flag = 1
+and b.store_cd not in (46838,20918,798,12769,17764,24062,24553,43311,937,19085,834,969,19836,2795) -- remove pay at pump
+;
+
+select segment, dm_split, count(enterprise_customer_id) from Petrol_4km_close_to_pfs group by 1,2 order by 3;
+
+select  segment, dm_split, count(enterprise_customer_id) from Petrol_8km_close_to_pfs group by 1,2 order by 3
+
 
 /*
 -- join together overall
