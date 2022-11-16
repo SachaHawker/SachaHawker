@@ -36,6 +36,7 @@ from bank_base as a
     left join TD_REPORTING.TD_EXPERIMENTAL_JOURNEYS as c
     on a.ec_id = c.enterprise_customer_ID;
 
+Select count(*), count(distinct ec_ID) from Bank_card_customers_in_RF where Ranking_File_Flag = 1;
 
 //Finding all customers that are less than 8 weeks active
 create or replace table bank_card_customers_8wk_DN_active1 as
@@ -43,15 +44,22 @@ select *
 from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."DIG_NECTAR_SEGMENTATION" as b
 where weeks_since_latest_activity <='8';
 
+//Finding all customers that are over 8 weeks active
+Create or replace temp table bank_card_customers_8wk_DN_active3 as
+select *
+from "EDWS_PROD"."PROD_CMT_CAMPAIGN_01"."DIG_NECTAR_SEGMENTATION" as b
+where weeks_since_latest_activity >'8';
+
 //Adding in DN flag to main pot
 create or replace table bank_card_customers_8wk_DN_active2 as
 select *,
        case when ec_id in (select ec_id from bank_card_customers_8wk_DN_active1) then '8wk Active'
-         else 'Over 8wk Active'
+         when ec_id in (select ec_id from bank_card_customers_8wk_DN_active3) then 'Over 8wk Active'
+           else 'Non-DN'
         end as DN_8_wk_flag
 from Bank_card_customers_in_RF;
 
-
+select count (distinct sr_id), count(*) from bank_card_customers_8wk_DN_active2;
 
 // All customers that have shopped online
 Create or replace temp table  bank_card_customers_GOL as
@@ -61,8 +69,7 @@ Create or replace temp table  bank_card_customers_GOL as
     inner join EDWS_PROD.PROD_CMT_PRESENTATION.VW_CA_OL_TRANS_SUMMARY as e on d.SR_ID=e.SR_ID
         where d.PARTY_ACCOUNT_TYPE_CODE='02';
 
---checking numbers still match
-select count (distinct sr_id), count(*) from bank_card_customers_GOL;
+
 
 //Finding customers that are online//
 create or replace temp table bank_card_customers_GOL_1 as
@@ -78,7 +85,8 @@ create or replace temp table bank_card_customers_GOL_2 as
 from bank_card_customers_8wk_DN_active2;
 
 
-
+--checking numbers still match
+select count (distinct sr_id), count(*) from bank_card_customers_GOL_2;
 
 
 //WEEKLY SPEND/VISITS
