@@ -129,7 +129,6 @@ group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18;
 Select count(*),transaction_date from Redemptions_TD08 group by transaction_date;
 
 
-
 create or replace temp table points_redemptions as
 select distinct pa.enterprise_customer_id as ec_id,
                 point_red.party_account_id as sr_id,
