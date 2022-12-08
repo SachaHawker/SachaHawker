@@ -52,14 +52,11 @@ and a.campaignname = td.trade_driver
 inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction as d
 on ec.PARTY_ACCOUNT_ID = d.party_account_ID
 where a.campaignname = '2223_TD04'
-and a.flowchartname = 'Triple_Points'
+and a.flowchartname = 'Flash_Email'
 and td.trade_driver = '2223_TD04'
 
 
 Select * from TP_TD04_barcode;
-
-
-
 
 
 create or replace temp table instore_points_TD04 as
