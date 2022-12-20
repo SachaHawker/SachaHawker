@@ -3,6 +3,12 @@ USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
 USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA td_REPORTING;
 
+// Create table of those that were targetted//
+create or replace temp table TD08_Standard_DM_Target as
+    select * from TD08_2223_Standard_DM
+where target_control_flag = 1;
+
+
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
 create or replace temp table TD_Date_And_Campaign_Map_SH_TD08 as
                       select a.fin_year,
@@ -31,9 +37,8 @@ create or replace temp table TD_Date_And_Campaign_Map_SH_TD08 as
                  and campaign_type = 'Standard_DM'
                  and (b.redeeming = 1 or b.printing = 1);
 
-select * from EDWS_PROD.PROD_CMT_PRESENTATION.vw_chrh_campaign_ec where flowchartname = 'Standard_DM'  limit 5;
 
---creating barcode lookup, all DM barcodes for money off and fuel weeks for each threshold1
+--creating barcode lookup
 create or replace temp table Barcodes_SH as
 Select
 a.flowchartname,
@@ -62,9 +67,6 @@ where a.campaignname = '2223_TD08'
 and a.flowchartname = 'Standard_DM'
 group by 1,2,3,4,5,6,7,8,9;
 
-Select * from barcodes_SH where barcode = '280025022069990';
-
-
 -- add start, end and rolling date
 Create or replace temp table barcodes2_SH as
 Select
@@ -74,61 +76,7 @@ Select
 '14' rolling_days_validity
 from Barcodes_SH;
 
-
-create or replace temp table Redemptions_TD08 as
-select distinct
-    pa.enterprise_customer_id as ec_id,
-    pl.party_account_id as sr_id,
-    pl.transaction_date,
-    to_time(right(cast(1000000 + pl.transaction_time as varchar(7)), 6)) as transaction_time,
-    pl.transaction_number,
-    st.party_account_type_code,
-    bl.barcode,
-    l.location,
-    st.transaction_value,
-    bl.campaign_start_date,
-    0 as print_qty,
-    1 as redeem_qty,
-    bl.campaignname,
-    bl.reward_value_penceoff,
-    '' as offer_code,
-    null as threshold1,
-    0 as online_flag,
-    1 as pfs_red,
-    sum(pl.payment_value) as payment_value
-
-from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_payment_line pl
-
-inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction st
-    on st.location_key = pl.location_key
-        and st.transaction_date = pl.transaction_date
-        and st.transaction_time = pl.transaction_time
-        and st.transaction_number = pl.transaction_number
-        and st.party_account_type_code = pl.party_account_type_code
-        and st.party_account_id = pl.party_account_id
-        and st.till_number = pl.till_number
-
-inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_c_location_map as l
-    on l.location_key = st.location_key
-
-left join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_party_account pa
-    on pa.party_account_id = st.party_account_id
-
-inner join (select distinct         campaignname,
-                                    campaign_start_date,
-                                    campaign_end_date,
-                            reward_value_penceoff,
-                            Barcode
-            from barcodes2_SH) as bl
-    on pl.coupon_id = bl.barcode
-        and pl.transaction_date between to_date(bl.campaign_start_date) and to_date(bl.campaign_end_date)
-
-where pl.payment_type_code = '003'
-group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18;
-
-Select count(*),transaction_date from Redemptions_TD08 group by transaction_date;
-
-
+-- Find the points redemptions for those that redeemed TTD coupon
 create or replace temp table points_redemptions as
 select distinct pa.enterprise_customer_id as ec_id,
                 point_red.party_account_id as sr_id,
@@ -165,32 +113,19 @@ from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_loyalty_coupon_redemption as point_re
                     on l.location_key             = st.location_key
          left join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_party_account as pa
                    on pa.party_account_id        = st.party_account_id
-;
-
-select * from points_redemptions where barcode = '280025022069990';
-
-select count (distinct ec_id) from  points_redemptions where barcode = '280025022069990';
-
-
-create or replace temp table redemptions2_TD08 as
-select a.*, b.fin_week, b.week_start, b.week_end
-from points_redemptions as a
-left join TD_date_map as b
-where a.transaction_date between b.week_start and b.week_end;
-
-select count (*), fin_week from  redemptions2_TD08 where barcode = '280025022069990' group by 2;
+where barcode = '280025022069990';
 
 
 
+// Redemptions of those that were selected//
+create or replace temp table TD08_standard_DM_Redemptions as
+    select a.*,  b.full_nectar_card_num from points_redemptions a
+inner join TD08_Standard_DM_Target b
+on a.ec_id = b.ec_id;
 
 
 
-
-
-
-
-
-
+-- PETROL
 -- Create my own date and campaign map, normal one is live, this is just for this campaign
 create or replace temp table TD_Date_And_Campaign_Map_SH_TD08_pet as
                       select a.fin_year,
@@ -260,7 +195,7 @@ Select
 from Barcodes_SH_pet;
 
 
-
+-- Create points redemptions table of those that redeemed the TTD coupon
 create or replace temp table points_redemptions_pet as
 select distinct pa.enterprise_customer_id as ec_id,
                 point_red.party_account_id as sr_id,
@@ -297,21 +232,66 @@ from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_loyalty_coupon_redemption as point_re
                     on l.location_key             = st.location_key
          left join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_party_account as pa
                    on pa.party_account_id        = st.party_account_id
+where barcode = '280025022070002';
+
+-- Create target customers for petrol
+create or replace temp table TD08_Petrol_DM_Target as
+Select * from td08_2223_petrol_dm where target_control_flag =1;
+
+-- only get redemptions from those selected
+create or replace temp table td08_Petrol_DM_redemptions as
+    select a.*, b.full_nectar_card_num from points_redemptions_pet a
+inner join TD08_Petrol_DM_Target b
+on a.ec_id = b.ec_id;
+
+
+-- join on petrol and standard redemptions
+create or replace temp table total_DM_redemptions as
+    select distinct full_nectar_card_num, ec_id
+    from td08_Petrol_DM_redemptions
+union all
+select distinct full_nectar_card_num, ec_id from TD08_standard_DM_Redemptions;
+
+select count(distinct full_nectar_card_num), count(full_nectar_card_num) from total_DM_redemptions;
+
+--points for account and formatting for beb file
+create or replace temp table beb_amounts as
+select distinct ec_id,
+                substring(full_nectar_card_num,len(full_nectar_card_num)-10,len(full_nectar_card_num))  as party_account_no,
+                full_nectar_card_num as rewardcardnumber,
+                250 as points_reward,
+                points_reward*0.00425 as points_cost,
+                current_date() as beb_date
+from total_DM_redemptions
 ;
 
-select * from points_redemptions where barcode = '280025022069990';
+set transdate = (to_char(dateadd(days, -1, current_timestamp), 'DD/MM/YYYY HH:SS:MI'));
 
-select count (distinct ec_id) from  points_redemptions where barcode = '280025022069990';
+--add points
+CREATE OR REPLACE temp TABLE Beb_File AS
+SELECT       98263000   AS IIN,
+       SUBSTR(REWARDCARDNUMBER,9,11) AS CARDNUMBER,
+       9106       AS STORENUMBER,
+       99         AS OUTLETTYPE,
+       999        AS REASONCODE,
+       'SSLBONUS' AS OFFERCODE,
+       $TRANSDATE AS TRANSDATE,
+       0          AS TRANSVALUE,
+       0          AS BASEPOINTS,
+       points_reward AS BONUSPOINTS,
+       0          AS PROMOPOINTS,
+       0          AS POINTSEXCHANGED,
+       0          AS VOUCHERSISSUES,
+       'TDAnalyst'    AS CASHIERID
+FROM beb_amounts
+;
+
+select * from Beb_File;
+
+select $transdate;
 
 
-create or replace temp table redemptions2_TD08_pet as
-select a.*, b.fin_week, b.week_start, b.week_end
-from points_redemptions_pet as a
-left join TD_date_map as b
-where a.transaction_date between b.week_start and b.week_end;
-
-select count (*), fin_week from  redemptions2_TD08_pet where barcode = '280025022070002' group by 2;
 
 
 
-Select count (*) from td08_2223_petrol_dm where target_control_flag =1;
+
