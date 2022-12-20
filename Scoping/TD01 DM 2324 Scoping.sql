@@ -12,6 +12,7 @@ where b.JSGROC_EM in ('Y','LI','LIN')
 and a.target_control_flag =1;
 --1,156,452
 
+
 -- in suppression
 select count(*)
 from TD09_2223_standard_dm a

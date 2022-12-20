@@ -100,6 +100,7 @@ from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_loyalty_coupon_redemption as point_re
 
 select * from instore_points_TD04
 
+
 select count(distinct ec_id) as redeemers,
        avg(transaction_value) as avg_spend,
        min(transaction_value) as min_spend,
