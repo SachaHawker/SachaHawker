@@ -1,3 +1,8 @@
+
+USE ROLE RL_PROD_MARKETING_ANALYTICS;
+USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
+USE DATABASE CUSTOMER_ANALYTICS;
+USE SCHEMA TD_REPORTING;
 -- CONTACT HISTORY TABLE --
 -- Campaign name will be; year_TDXX e.g. 2223_TD02
 -- Flowchartname will be: the campaign e.g. Standard_DM or Flash_Email
@@ -11,11 +16,12 @@ on ec.PARTY_ACCOUNT_ID = b.SR_ID
 left join (select distinct trade_driver,
 campaign_type,
 campaign,
-flowchartname from td_date_and_campaign_map_SH) as td
+flowchartname from td_date_and_campaign_map) as td
 on a.flowchartname = td.flowchartname
 and a.campaignname = td.trade_driver
-where a.campaignname = '2223_TD02'
-and a.flowchartname = 'Flash_Email'
+where a.campaignname = '2223_TD09'
+and a.flowchartname = 'Standard_DM'
+limit 500;
 
 
 
