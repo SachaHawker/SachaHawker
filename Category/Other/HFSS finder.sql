@@ -1,0 +1,19 @@
+USE ROLE RL_PROD_MARKETING_ANALYTICS;
+USE DATABASE CUSTOMER_ANALYTICS;
+USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
+USE SCHEMA PRODUCT_REPORTING;
+
+
+select A.SKU,
+       A.SKU_DESC,
+       A.sub_category_name,
+       A.sub_category,
+       a.category_name,
+       A.buyer_resp,
+       B.HFSS_ITEM_IND,
+       B.HFSS_CATEGORY_NAME,
+       B.COUNTRY_NAME
+FROM EDWS_PROD.PROD_CMT_PRESENTATION.vw_sku A
+LEFT JOIN EDWS_PROD.PROD_CMT_PRESENTATION.VW_DIM_HFSS_ITEMS B ON A.SKU = B.ITEM_CD
+   where   a.end_date is null
+and a.sub_category in (934,602,781,968)
