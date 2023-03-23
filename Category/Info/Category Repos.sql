@@ -24,3 +24,7 @@ select TRANSACTION_DATE,count(*) from print_master where print_ind = 1 group by 
 
 --Snapshots -- change campaign name
 SELECT * FROM EDWS_PROD.PROD_CMT_CAMPAIGN_01.SNP_X08222CT_POP
+
+-- Price Tendency Model
+select * from "CUSTOMER_ANALYTICS"."PRODUCTION"."CVU_PRICE_TENDENCY"
+-- shopped in past 6 months - run every period

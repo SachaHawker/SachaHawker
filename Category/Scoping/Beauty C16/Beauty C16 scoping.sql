@@ -29,6 +29,8 @@ select distinct barcode from beautyc6_Redemptions where reward_value_fixed is no
 select * from EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.vw_shopping_transaction limit 10;
 
 
+
+
 create or replace table vw_payment as
 select party_account_id,
        party_account_type_code,
@@ -137,3 +139,6 @@ select count(*) from beautyc6_redemptions where reward_value_fixed is not null;
 select count(*) from beautyc6_redemptions where reward_value_money is not null;
 -- Money 3754
 --3755
+
+
+select * from "CUSTOMER_ANALYTICS"."PRODUCTION"."CVU_PRICE_TENDENCY"

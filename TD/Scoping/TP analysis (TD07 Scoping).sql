@@ -3,6 +3,11 @@ USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
 USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
+    select * from
+EDWS_PROD.PROD_CMT_PRESENTATION.VW_CA_CUSTOMER_ACCOUNT limit 5;
+
+
+
 //TD04//
 -- Make my own campaign map
 create or replace temp table td_date_and_campaign_map_TD04 as

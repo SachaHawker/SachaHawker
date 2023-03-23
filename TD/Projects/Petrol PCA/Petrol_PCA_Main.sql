@@ -3,7 +3,9 @@ USE WAREHOUSE WHS_PROD_MARKETING_ANALYTICS_LARGE;
 USE DATABASE CUSTOMER_ANALYTICS;
 USE SCHEMA TD_REPORTING;
 
+-- select * from TD10_2223_Petrol_DM;
 
+Select * from pca_999_campaign_repo_detail1 where campaign like 'TD10_2223_Petrol%' limit 100;
 
 -- --TD08
 Set campaignname = '2122_TD08';

@@ -16,4 +16,6 @@ select A.SKU,
 FROM EDWS_PROD.PROD_CMT_PRESENTATION.vw_sku A
 LEFT JOIN EDWS_PROD.PROD_CMT_PRESENTATION.VW_DIM_HFSS_ITEMS B ON A.SKU = B.ITEM_CD
    where   a.end_date is null
-and a.sub_category in (934,602,781,968)
+and a.sub_category in (581, 413,945, 691,817
+
+);

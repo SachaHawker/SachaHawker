@@ -3,7 +3,7 @@ use warehouse ADW_2XLARGE_ADHOC_WH;
 use database CUSTOMER_ANALYTICS;
 use schema PRODUCT_REPORTING;
 
-create or replace temp table gifting as
+create or replace temp table FISH as
     select cust.sr_id
          ,sum(EXTENDED_PRICE) as SUM_EXTENDED_PRICE
          ,max(transaction_date)  as LAST_PURCHASE_DATE
@@ -23,17 +23,22 @@ create or replace temp table gifting as
          and a.extended_price > 0
          and a.transaction_date >= (current_date-180)
             and sku.end_date is null
-            AND sub_category in (832)
-   and sku.brand = 'OWN-LABEL'
+            AND  sub_category in (948,
+902,
+911,
+450,
+50)
+--    and sku.brand = 'OWN-LABEL'
       group by 1 ;
 
+-- add own-label if its product level or bespoke thresholds
 
 --apply the criteria to ensure we select profitable customers
 /* Get the average spend to decide what threshold each customer will be getting and ensure they have 0.33% avg margin */
-create or replace temp table gifting_trans as
+create or replace temp table fish_trans as
     select *,
            SUM_EXTENDED_PRICE/NUM_TRANSACTIONS as avg_spd
-    from gifting
+    from fish
     where 1=1
       -- and avg_margin > 0.33
       and SUM_ITEM_QUANTITY_26WEEKS >= 2
@@ -43,4 +48,16 @@ create or replace temp table gifting_trans as
 select  percentile_cont(0.25) within group (order by AVG_SPD)  as avg_spend_p25
      , percentile_cont(0.5) within group (order by AVG_SPD)  as avg_spend_p50
      , percentile_cont(0.75) within group (order by AVG_SPD)  as avg_spend_p75
-from gifting_trans;
+from fish_trans;
+
+
+-- to get the no. of customers in each percentile (update manually the percentiles from what is outputted above)
+create or replace temp table percentiles as
+select *,
+         case when avg_spd between 1 and 4.25 then 25
+            when  avg_spd BETWEEN 4.26 and 5.89 then 50
+             when avg_spd BETWEEN 5.90 and 8.75 then 75
+         else 0 end as Percentile
+   from halal_trans;
+
+select percentile, count(distinct SR_ID)  from percentiles group by 1
