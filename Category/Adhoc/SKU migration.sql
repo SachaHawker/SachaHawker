@@ -6,23 +6,8 @@ use schema PRODUCT_REPORTING;
 
 Create or replace temp table categories as
 Select a.*
---        b.AVG_SELLING_PRICE_12WEEKS,
---        b.SKU_PPP_12WEEKS,
---        b.MARGIN_12WEEKS,
---        b.NUM_NECT_CUSTOMERS_26WEEKS,
---        b.AVG_SELLING_PRICE_4WEEKS,
---        b.SKU_PPP_4WEEKS,
---        b.MARGIN_4WEEKS,
---        b.SALES_TURNOVER_4WEEKS,
---        b.SALES_TURNOVER_12WEEKS,
---        b.SKU_PPP_26WEEKS,
---        b.MARGIN_26WEEKS,
---        b.SALES_TURNOVER_26WEEKS,
---        b.AVG_SELLING_PRICE_26WEEKS
            from
 EDWS_PROD.PROD_CMT_PRESENTATION.vw_sku a
---            Inner join EDWS_PROD.PROD_CMT_PRESENTATION.VW_SKU_SUMMARY b
---            on a.SKU= b.SKU
     where MANAGER_ID in (
 6305,
 6273,
@@ -453,7 +438,7 @@ create or replace temp table pain_meds as
 
 
 /*FUTURE FORMAT SKUS*/
-select count(sku) from future_format; -- 80 -- 80
+-- select count(sku) from future_format; -- 80 -- 80
 Create or replace temp table future_format as
     select a.*,
            b.store
@@ -537,11 +522,34 @@ where
 and
 (a.END_DATE IS NULL
 and b.AVG_SELLING_PRICE_26WEEKS> 1
-and b.NUM_NECT_CUSTOMERS_26WEEKS >= '5000'
+and b.NUM_NECT_CUSTOMERS_26WEEKS >= 5000
 and b.SALES_TURNOVER_4WEEKS >= 1000
-and
-b.MARGIN_26WEEKS >= 0.33));
+and b.MARGIN_26WEEKS >= 0.33));
 
+
+
+create or replace temp table categories_3 as
+    select a.*,
+           b.AVG_SELLING_PRICE_26WEEKS,
+           b.NUM_NECT_CUSTOMERS_26WEEKS,
+           b.SALES_TURNOVER_4WEEKS,
+           b.MARGIN_26WEEKS
+           from categories_2 a
+             left join EDWS_PROD.PROD_CMT_PRESENTATION.VW_SKU_SUMMARY b
+             on a.SKU= b.SKU
+where
+(Own_Brand= 'Y'
+and
+(a.END_DATE IS NULL
+and  VW_SKU.DIM_SKU_SUMMARY.AVG_SELLING_PRICE_26WEEKS> 1
+and b.NUM_NECT_CUSTOMERS_26WEEKS >= 5000
+and b.SALES_TURNOVER_4WEEKS >= 1000
+and b.MARGIN_26WEEKS >= 0.33));
+
+
+
+select count (*) from categories_2; -- 2729
+select count (*) from categories_3; -- 1248 -- 2623 -- 1900 -- 2034 -- 1978
 
 -- add on HFSS and points
 create or replace temp table categories_4 as
