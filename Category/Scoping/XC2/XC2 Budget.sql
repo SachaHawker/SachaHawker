@@ -187,7 +187,7 @@ select    SR_ID
         , pounds
         , offer_type
 		, avg_selling_price_26weeks as asp
-		, (margin_26weeks-11.02) as margin
+		, (margin_26weeks) as margin
 
 		from addmanager as a
 		left join "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_SKU_SUMMARY" as b
@@ -427,6 +427,18 @@ where margin is null
 or manager_resp is null
 or asp is null
 ;
+
+
+-- Margin adjustment to be in line with finance, need to subtract 11.02% from margin
+create or replace temp table margin_adjustment as
+select *,
+       margin - 0.1102 as adjusted_margin
+from addcountermanager;
+
+create or replace temp table addcountermanager as
+    select sr_id, sku_rank, sku, points, pounds, offer_type, adjusted_margin as margin, manager_resp, asp
+from margin_adjustment;
+
 
 ------------------------------------------------------------------------------------------------------------------------
 ---- CODE FROM HERE IS ORGINAL BUDGET CODE. THIS CREATES RAW DATA TO USE FOR THE BUDGETS BASED ON THE ABOVE DATASET ----
@@ -845,3 +857,5 @@ insert into PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY
 select * from phased_budget_repo;
 
 select * from PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY where CAMPAIGN_CODE = $CampaignName
+
+-- delete from PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY where CAMPAIGN_CODE = $CampaignName;

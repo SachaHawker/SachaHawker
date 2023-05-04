@@ -363,6 +363,8 @@ where SUB_CATEGORY in
 503
 );
 
+select distinct segment_name from counters ;
+
 /*NECTAR EXCLUSIONS*/
 -- select count(sku) from nectar_exclusions; -- 3936 -- 1296
 create or replace temp table nectar_exclusions as
@@ -379,7 +381,10 @@ where brand is null;
 -- select count(sku) from sushi; -- 0 - 0
 Create or replace temp table sushi as
     select * from categories
-where BUYER_ID=6237;
+where super_category = 9450;
+
+select * from categories limit 5;
+
 
 /*CAFE*/
 -- select count(sku) from cafe; -- 10776 -- 10776
@@ -446,6 +451,20 @@ Create or replace temp table future_format as
 inner join EDWS_PROD.PROD_CMT_CAMPAIGN_01.USR_FF_SKUS_131015 b
     on a.sku=b.sku
     where b.store IS NULL;
+
+/*Check future format transactions*/
+/*select count(a.transaction_number)
+    from
+        EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SHOPPING_TRANSACTION_LINE  a
+            inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_EAN as b
+on a.ean_key=b.ean_key
+inner join EDWS_PROD.PROD_EDW_SAS_ADHOC_VIEWS.VW_SKU_MAP as c
+on b.sku_key=c.sku_key
+inner join ADW_PROD.INC_PL.LOCATION_DIM d
+on a.location_key = d.location_key
+where c.sku in (select sku from future_format)
+and a.transaction_date >= (current_date - 180)
+having count(d.location)> 200;*/
 
 
 
@@ -526,25 +545,27 @@ and b.NUM_NECT_CUSTOMERS_26WEEKS >= 5000
 and b.SALES_TURNOVER_4WEEKS >= 1000
 and b.MARGIN_26WEEKS >= 0.33));
 
+select count (*) from categories_3; -- 1251
 
 
-create or replace temp table categories_3 as
-    select a.*,
-           b.AVG_SELLING_PRICE_26WEEKS,
-           b.NUM_NECT_CUSTOMERS_26WEEKS,
-           b.SALES_TURNOVER_4WEEKS,
-           b.MARGIN_26WEEKS
-           from categories_2 a
-             left join EDWS_PROD.PROD_CMT_PRESENTATION.VW_SKU_SUMMARY b
-             on a.SKU= b.SKU
-where
-(Own_Brand= 'Y'
-and
-(a.END_DATE IS NULL
-and  VW_SKU.DIM_SKU_SUMMARY.AVG_SELLING_PRICE_26WEEKS> 1
-and b.NUM_NECT_CUSTOMERS_26WEEKS >= 5000
-and b.SALES_TURNOVER_4WEEKS >= 1000
-and b.MARGIN_26WEEKS >= 0.33));
+
+-- create or replace temp table categories_3 as
+--     select a.*,
+--            b.AVG_SELLING_PRICE_26WEEKS,
+--            b.NUM_NECT_CUSTOMERS_26WEEKS,
+--            b.SALES_TURNOVER_4WEEKS,
+--            b.MARGIN_26WEEKS
+--            from categories_2 a
+--              left join EDWS_PROD.PROD_CMT_PRESENTATION.VW_SKU_SUMMARY b
+--              on a.SKU= b.SKU
+-- where
+-- (Own_Brand= 'Y'
+-- and
+-- (a.END_DATE IS NULL
+-- and  VW_SKU.DIM_SKU_SUMMARY.AVG_SELLING_PRICE_26WEEKS> 1
+-- and b.NUM_NECT_CUSTOMERS_26WEEKS >= 5000
+-- and b.SALES_TURNOVER_4WEEKS >= 1000
+-- and b.MARGIN_26WEEKS >= 0.33));
 
 
 
@@ -563,6 +584,9 @@ create or replace temp table categories_4 as
     end as points
            from categories_3;
 
+
+select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.SNP_XC4CT_SKU;
+
 -- draw out only required columns
 // Export and send to comms - this will be for their first tab //
 create or replace temp table First_tab as
@@ -575,9 +599,12 @@ create or replace temp table First_tab as
     POINTS,
     OWN_BRAND,
     HFSS_FLAG
-    from categories_4;
+    from EDWS_PROD.PROD_CMT_CAMPAIGN_01.SNP_XC4CT_SKU;
 
 select * from First_tab;
+
+Create or replace table XC4_First_tab as
+    select * from First_tab;
 
 
 /*EANs*/
@@ -635,3 +662,6 @@ create or replace temp table Second_Tab as
 from EAN_SKU_LIST;
 
 select * from Second_Tab;
+
+create or replace table XC4_second_tab as
+    select * from Second_Tab;

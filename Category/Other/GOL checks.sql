@@ -25,6 +25,8 @@ and GOL = 'Yes';
 
 
 
+
+
 select * from EDWS_PROD.PROD_CMT_CAMPAIGN_01.XC_AUTO_CustSku limit 5;
 
 select distinct b.INSTORE, B.GOL,b.coupon_id, b.coupon_name, b.barcode

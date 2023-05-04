@@ -20,22 +20,22 @@ use schema PRODUCT_REPORTING;
 
 
 
-set CampaignName    = 'X01232';         -- As per User Variable in Unica --
+set CampaignName    = 'X02232';         -- As per User Variable in Unica --
 set CampaignType    = 'CT';
 set username        = 'SH';
 set control_grp     = 0.05 ;            -- percentage of control group, normally 0.08 or 0.1 --
 set print_dist      = 0.60;             -- estimated print distribution --
 
-set tab             = concat('CUSTOMER_ANALYTICS.PRODUCT_REPORTING.SH_X01232_FINAL_SEL');
+set tab             = concat('CUSTOMER_ANALYTICS.PRODUCT_REPORTING.SH_X02232_FINAL_SEL');
 select $tab;
 -- ESTIMATED REDEMPTION RATE AND SCR FOR ANY CELL THAT DOESNT SIT WITHIN THE STANDARD CATEGORY AREA MANAGER --
 set other_RR    = 0.05;
 set other_SCR   = 2.5;
 
 -- VARIABLES FOR BUDGET REPOSITORIES
-set print_start = '2023-03-08';
-set print_stop  = '2023-03-21';
-set final_red   = '2023-04-04';
+set print_start = '2023-04-05';
+set print_stop  = '2023-04-25';
+set final_red   = '2023-05-16';
 
 set year = (select year(to_date($print_start)));
 set fin_yr = (select case when $print_start < '2020-03-08' then '1920'
@@ -71,21 +71,21 @@ select SR_ID, EC_ID, FULL_NECTAR_CARD_NUM, HH_ID
      , zeroifnull(SKU3) as SKU3, zeroifnull(SKU4) as SKU4
      , zeroifnull(SKU5) as SKU5, zeroifnull(SKU6) as SKU6
      , zeroifnull(SKU7) as SKU7, zeroifnull(SKU8) as SKU8
-    , zeroifnull(SKU9) as SKU9, zeroifnull(SKU10) as SKU10
+--     , zeroifnull(SKU9) as SKU9, zeroifnull(SKU10) as SKU10
      , zeroifnull(a.bPoints1) as BP1, zeroifnull(a.bPoints2) as BP2
      , zeroifnull(a.bPoints3) as BP3, zeroifnull(a.bPoints4) as BP4
      , zeroifnull(a.bPoints5) as BP5, zeroifnull(a.bPoints6) as BP6
      , zeroifnull(a.bPoints7) as BP7, zeroifnull(a.bPoints8) as BP8
-    , zeroifnull(a.bPoints9) as BP9, zeroifnull(a.bPoints10) as BP10
+--     , zeroifnull(a.bPoints9) as BP9, zeroifnull(a.bPoints10) as BP10
      , zeroifnull(substr(a.bPounds1,2,length(a.bpounds1))) as BPo1, zeroifnull(substr(a.bPounds2,2,length(a.bPounds2))) as BPo2
      , zeroifnull(substr(a.bPounds3,2,length(a.bPounds3))) as BPo3, zeroifnull(substr(a.bPounds4,2,length(a.bPounds4))) as BPo4
      , zeroifnull(substr(a.bPounds5,2,length(a.bPounds5))) as BPo5, zeroifnull(substr(a.bPounds6,2,length(a.bPounds6))) as BPo6
      , zeroifnull(substr(a.bPounds7,2,length(a.bPounds7))) as BPo7, zeroifnull(substr(a.bPounds8,2,length(a.bPounds8))) as BPo8
-    , zeroifnull(substr(a.bPounds9,2,length(a.bPounds9))) as BPo9, zeroifnull(substr(a.bPounds10,2,length(a.bPounds10))) as BPo10
+--     , zeroifnull(substr(a.bPounds9,2,length(a.bPounds9))) as BPo9, zeroifnull(substr(a.bPounds10,2,length(a.bPounds10))) as BPo10
      , BARCODE1, BARCODE2, BARCODE3, BARCODE4, BARCODE5, BARCODE6, BARCODE7, BARCODE8
-    , BARCODE9, BARCODE10
+--     , BARCODE9, BARCODE10
      , OCID1, OCID2, OCID3, OCID4, OCID5, OCID6 , OCID7, OCID8
-    , OCID9, OCID10
+--     , OCID9, OCID10
      , a.Scottish_Cust as Scottish_Cust
 --     , LTLT_HIGH, VICS
 from sorted_pre a
@@ -103,12 +103,12 @@ create or replace temp table trans_points as
                when counts = 'BP6' then 6
                when counts = 'BP7' then 7
                when counts = 'BP8' then 8
-               when counts = 'BP9' then 9
-               when counts = 'BP10' then 10
+--                when counts = 'BP9' then 9
+--                when counts = 'BP10' then 10
                end as count
 
     from sorted
-    unpivot(points for counts in (BP1, BP2, BP3, BP4, BP5, BP6, BP7, BP8, BP9, BP10))
+    unpivot(points for counts in (BP1, BP2, BP3, BP4, BP5, BP6, BP7, BP8/*, BP9, BP10*/))
     order by sr_id, count;
 
 -- TRANSPOSES THE SKUS IN THE SELECTION FILE AND KEEPS NECESSARY FIELDS --
@@ -123,12 +123,12 @@ create or replace temp table trans_sku as
                when counts = 'SKU6' then 6
                when counts = 'SKU7' then 7
                when counts = 'SKU8' then 8
-               when counts = 'SKU9' then 9
-               when counts = 'SKU10' then 10
+--                when counts = 'SKU9' then 9
+--                when counts = 'SKU10' then 10
                end as count
 
     from sorted
-    unpivot(skus for counts in (sku1, sku2, sku3, sku4, sku5, sku6, sku7, sku8, sku9, sku10))
+    unpivot(skus for counts in (sku1, sku2, sku3, sku4, sku5, sku6, sku7, sku8/*, sku9, sku10*/))
     order by sr_id, count;
 
 create or replace temp table trans_pounds as
@@ -141,12 +141,12 @@ create or replace temp table trans_pounds as
                when counts = 'BPO6' then 6
                when counts = 'BPO7' then 7
                when counts = 'BPO8' then 8
-               when counts = 'BPO9' then 9
-               when counts = 'BPO10' then 10
+--                when counts = 'BPO9' then 9
+--                when counts = 'BPO10' then 10
                end as count
 
     from sorted
-    unpivot(pounds for counts in (BPo1, BPo2, BPo3, BPo4, BPo5, BPo6, BPo7, BPo8, BPo9, BPo10))
+    unpivot(pounds for counts in (BPo1, BPo2, BPo3, BPo4, BPo5, BPo6, BPo7, BPo8/*, BPo9, BPo10*/))
     order by sr_id, count;
 
 
@@ -177,7 +177,6 @@ select    SR_ID
 		where end_date is null
 		and skus >0;
 
--- ADDS ON THE AVERAGE SELLING PRICE AND THE MARGIN FOR THE SKU'S (NOTE: DOES NOT ADD FOR COUNTER ITEMS) --
 create or replace temp table addaspmargin as
 select    SR_ID
 		, SKU_RANK
@@ -187,238 +186,288 @@ select    SR_ID
         , pounds
         , offer_type
 		, avg_selling_price_26weeks as asp
-		, (margin_26weeks) as margin
+		, margin_26weeks as margin
 
 		from addmanager as a
 		left join "EDWS_PROD"."PROD_CMT_PRESENTATION"."VW_SKU_SUMMARY" as b
 		on a.sku=b.sku;
 
+
+
 create or replace temp table addcountermanager as
          select sr_id, sku_rank, sku, points, pounds, offer_type,
+         case when sku=19 then 0.37
+                when sku=21 then 0.37
+                when sku=22 then 0.37
+                when sku=25 then 0.37
+                when sku=66 then 0.37
+                when sku=67 then 0.37
+                when sku=68 then 0.37
+                when sku=70 then 0.41
+                when sku=77 then 0.46
+                when sku=152 then 0.41
+                when sku=158 then 0.43
+                when sku=162 then 0.43
+                when sku=260 then 0.41
+                when sku=261 then 0.41
+                when sku=262 then 0.41
+                when sku=263 then 0.39
+                when sku=264 then 0.39
+                when sku=267 then 0.35
+                when sku=269 then 0.39
+                when sku=271 then 0.41
+                when sku=273 then 0.39
+                when sku=275 then 0.33
+                when sku=276 then 0.33
+                when sku=277 then 0.33
+                when sku=278 then 0.40
+                when sku=280 then 0.40
+                when sku=284 then 0.40
+                when sku=285 then 0.40
+                when sku=287 then 0.56
+                when sku=289 then 0.43
+                when sku=290 then 0.43
+                when sku=291 then 0.43
+                when sku=292 then 0.41
+                when sku=293 then 0.41
+                when sku=294 then 0.37
+                when sku=295 then 0.46
+                when sku=296 then 0.46
+                when sku=299 then 0.38
+                when sku=303 then 0.39
+                when sku=304 then 0.38
+                when sku=305 then 0.38
+                when sku=306 then 0.38
+                when sku=308 then 0.43
+                when sku=309 then 0.43
+                when sku=318 then 0.35
+                when sku=319 then 0.39
+                when sku=320 then 0.34
+                when sku=322 then 0.34
+                when sku=324 then 0.48
+                when sku=325 then 0.42
+                when sku=327 then 0.37
+                when sku=329 then 0.37
+                when sku=330 then 0.41
+                when sku=332 then 0.56
+                when sku=333 then 0.56
+                when sku=368 then 0.41
+                when sku=387 then 0.38
+                when sku=425 then 0.39
+                when sku=426 then 0.48
+                when sku=431 then 0.43
+                when sku=451 then 0.40
+                when sku=462 then 0.37
+                when sku=463 then 0.40
+                when sku=464 then 0.38
+                when sku=466 then 0.42
+                when sku=467 then 0.41
+                when sku=470 then 0.54
+                when sku=471 then 0.54
+                when sku=473 then 0.35
+                when sku=474 then 0.39
+                when sku=478 then 0.43
+                when sku=480 then 0.39
+                when sku=481 then 0.48
+                when sku=483 then 0.41
+
+-- Add in bespoke thresholds --
+                when sku=250 then 0.30
+                when sku=254 then 0.42
+                when sku=255 then 0.42
+                when sku=256 then 0.42
+                when sku=257 then 0.42
+                when sku=258 then 0.37
+                when sku=259 then 0.37
+                when sku=265 then 0.37
+                when sku=268 then 0.35
+                when sku=282 then 0.35
+                when sku=283 then 0.35
+
+                when sku > 1000 then margin end as margin,
          case
-             when SKU <= 15 then 0.33                                           -- Override Margins for Counter skus to 0.33        -- FRESH FOOD COUNTERS
-             when SKU >=235 and sku<= 249 then 0.33								-- Override Margins for Counter skus to 0.33        -- FRESH FOOD COUNTERS
+             when sku=19 then 'CM Household Baby & Pet'
+            when sku=21 then 'CM Household Baby & Pet'
+            when sku=22 then 'CM Household Baby & Pet'
+            when sku=25 then 'CM Household Baby & Pet'
+            when sku=66 then 'CM Household Baby & Pet'
+            when sku=67 then 'CM Household Baby & Pet'
+            when sku=68 then 'CM Packaged & Speciality'
+            when sku=70 then 'CM Packaged & Speciality'
+            when sku=77 then 'CM Packaged & Speciality'
+            when sku=152 then 'CM Packaged & Speciality'
+            when sku=158 then 'CM Packaged & Speciality'
+            when sku=162 then 'CM Packaged & Speciality'
+            when sku=260 then 'CM Packaged & Speciality'
+            when sku=261 then 'CM Packaged & Speciality'
+            when sku=262 then 'CM Packaged & Speciality'
+            when sku=263 then 'CM Packaged & Speciality'
+            when sku=264 then 'CM Packaged & Speciality'
+            when sku=267 then 'CM Packaged & Speciality'
+            when sku=269 then 'CM Packaged & Speciality'
+            when sku=271 then 'CM Packaged & Speciality'
+            when sku=273 then 'CM Packaged & Speciality'
+            when sku=275 then 'CM Packaged & Speciality'
+            when sku=276 then 'CM Packaged & Speciality'
+            when sku=277 then 'CM Packaged & Speciality'
+            when sku=278 then 'CM Packaged & Speciality'
+            when sku=280 then 'CM Packaged & Speciality'
+            when sku=284 then 'CM Packaged & Speciality'
+            when sku=285 then 'CM Packaged & Speciality'
+            when sku=287 then 'CM Packaged & Speciality'
+            when sku=289 then 'CM Packaged & Speciality'
+            when sku=290 then 'CM Packaged & Speciality'
+            when sku=291 then 'CM Packaged & Speciality'
+            when sku=292 then 'CM Packaged & Speciality'
+            when sku=293 then 'CM Packaged & Speciality'
+            when sku=294 then 'CM Household Baby & Pet'
+            when sku=295 then 'CM Packaged & Speciality'
+            when sku=296 then 'CM Packaged & Speciality'
+            when sku=299 then 'CM Packaged & Speciality'
+            when sku=303 then 'CM Packaged & Speciality'
+            when sku=304 then 'CM Packaged & Speciality'
+            when sku=305 then 'CM Packaged & Speciality'
+            when sku=306 then 'CM Packaged & Speciality'
+            when sku=308 then 'CM Packaged & Speciality'
+            when sku=309 then 'CM Packaged & Speciality'
+            when sku=318 then 'CM Packaged & Speciality'
+            when sku=319 then 'CM Packaged & Speciality'
+            when sku=320 then 'CM Packaged & Speciality'
+            when sku=322 then 'CM Packaged & Speciality'
+            when sku=324 then 'CM Packaged & Speciality'
+            when sku=325 then 'CM Packaged & Speciality'
+            when sku=327 then 'CM Packaged & Speciality'
+            when sku=329 then 'CM Packaged & Speciality'
+            when sku=330 then 'CM Packaged & Speciality'
+            when sku=332 then 'CM Packaged & Speciality'
+            when sku=333 then 'CM Packaged & Speciality'
+            when sku=368 then 'CM Packaged & Speciality'
+            when sku=387 then 'CM Packaged & Speciality'
+            when sku=425 then 'CM Packaged & Speciality'
+            when sku=426 then 'CM Packaged & Speciality'
+            when sku=431 then 'CM Packaged & Speciality'
+            when sku=451 then 'CM Packaged & Speciality'
+            when sku=462 then 'CM Household Baby & Pet'
+            when sku=463 then 'CM Packaged & Speciality'
+            when sku=464 then 'CM Packaged & Speciality'
+            when sku=466 then 'CM Packaged & Speciality'
+            when sku=467 then 'CM Packaged & Speciality'
+            when sku=470 then 'CM Packaged & Speciality'
+            when sku=471 then 'CM Packaged & Speciality'
+            when sku=473 then 'CM Packaged & Speciality'
+            when sku=474 then 'CM Packaged & Speciality'
+            when sku=478 then 'CM Packaged & Speciality'
+            when sku=480 then 'CM Packaged & Speciality'
+            when sku=481 then 'CM Packaged & Speciality'
+            when sku=483 then 'CM Packaged & Speciality'
 
-             when SKU >=19 and sku<= 25 then 0.32								-- Override Margins for HOUSEHOLD skus to 0.33      -- HOUSEHOLD COUNTERS
-             when SKU >=66 and sku<= 67 then 0.32								-- Override Margins for HOUSEHOLD skus to 0.33      -- HOUSEHOLD COUNTERS
 
-             when SKU >=55 and sku<= 65 then 0.33								-- Override Margins for PRODUCE skus to 0.33        -- PRODUCE
-             when SKU >=71 and sku<= 78 then 0.33								-- Override Margins for PRODUCE skus to 0.33        -- PRODUCE
-             when SKU >=80 and sku<= 82 then 0.33								-- Override Margins for PRODUCE skus to 0.33        -- PRODUCE
+  -- Add in bespoke thresholds --
+            when sku=250 then 'CM Packaged & Speciality'
+            when sku=254 then 'CM Meal Solutions'
+            when sku=255 then 'CM Meal Solutions'
+            when sku=256 then 'CM Meal Solutions'
+            when sku=257 then 'CM Meal Solutions'
+            when sku=258 then 'CM Meat Fish & Poultry'
+            when sku=259 then 'CM Meat Fish & Poultry'
+            when sku=265 then 'CM Meat Fish & Poultry'
+            when sku=268 then 'CM Meat Fish & Poultry'
+            when sku=282 then 'CM Meat Fish & Poultry'
+            when sku=283 then 'CM Meat Fish & Poultry'
 
-             when SKU >=260 and sku<= 337 then 0.327							-- Override Margins for CAP skus to 0.33            -- CANNED AND PACKAGED
+             when sku > 1000 then manager_resp end as manager_resp,
 
-             when sku >=205 and sku <=216 then 0.23             		        -- based on the previous 2 MFP solus campaign       -- MFP
+        case
+            when sku=19 then 10
+            when sku=21 then 15
+            when sku=22 then 20
+            when sku=25 then 35
+            when sku=66 then 5
+            when sku=67 then 7.5
+            when sku=68 then 5.25
+            when sku=70 then 3.75
+            when sku=77 then 5
+            when sku=152 then 3
+            when sku=158 then 4
+            when sku=162 then 4
+            when sku=260 then 4
+            when sku=261 then 3
+            when sku=262 then 2
+            when sku=263 then 2.5
+            when sku=264 then 3
+            when sku=267 then 2
+            when sku=269 then 2.5
+            when sku=271 then 5
+            when sku=273 then 2
+            when sku=275 then 3.5
+            when sku=276 then 1.75
+            when sku=277 then 2.5
+            when sku=278 then 2.5
+            when sku=280 then 3
+            when sku=284 then 2.25
+            when sku=285 then 2.75
+            when sku=287 then 2
+            when sku=289 then 3
+            when sku=290 then 2
+            when sku=291 then 5
+            when sku=292 then 4
+            when sku=293 then 2
+            when sku=294 then 30
+            when sku=295 then 2
+            when sku=296 then 4
+            when sku=299 then 1.75
+            when sku=303 then 3
+            when sku=304 then 2.75
+            when sku=305 then 3.75
+            when sku=306 then 5.5
+            when sku=308 then 3
+            when sku=309 then 5
+            when sku=318 then 5
+            when sku=319 then 1.75
+            when sku=320 then 2
+            when sku=322 then 4
+            when sku=324 then 4
+            when sku=325 then 5
+            when sku=327 then 7.25
+            when sku=329 then 4.25
+            when sku=330 then 5
+            when sku=332 then 3
+            when sku=333 then 5
+            when sku=368 then 4
+            when sku=387 then 1.5
+            when sku=425 then 5
+            when sku=426 then 1.5
+            when sku=431 then 4
+            when sku=451 then 1.7
+            when sku=462 then 25
+            when sku=463 then 2
+            when sku=464 then 2.5
+            when sku=466 then 2.75
+            when sku=467 then 4.75
+            when sku=470 then 3
+            when sku=471 then 2
+            when sku=473 then 4
+            when sku=474 then 3
+            when sku=478 then 6
+            when sku=480 then 8
+            when sku=481 then 5
+            when sku=483 then 8
 
-             when SKU in (222,223) then 0.2              		    			-- based on the criteria of margin at least 20%     -- BWS
 
-             when SKU >=338 and sku<= 340 then 0.33								-- Override Margins for FROZEN skus to 0.33         -- FROZEN FOOD
+      -- Add in bespoke thresholds --
+            when sku=250 then 5.75
+            when sku=254 then 2
+            when sku=255 then 2.5
+            when sku=256 then 3
+            when sku=257 then 2
+            when sku=258 then 2.5
+            when sku=259 then 3.5
+            when sku=265 then 5
+            when sku=268 then 2
+            when sku=282 then 2.5
+            when sku=283 then 3
 
-             when SKU >=26 and sku<= 28 then 0.33								-- Override Margins for  skus to 0.33               -- HEALTH AND BEAUTY
-             when SKU >=29 and sku<= 33 then 0.33								-- Override Margins for  skus to 0.33               -- HEALTH AND BEAUTY
-
-             when SKU >=34 and sku<= 38 then 0.33               				-- Override Margins for TTD ready meals skus to 0.33 -- MEAL SOLUTIONS
-             when SKU >=89 and sku<= 91 then 0.33								-- Override Margins for Plant Pioneer skus to 0.33   -- MEAL SOLUTIONS
-
-             when sku > 340 then margin end as margin,
-
-
-         case
-             when SKU <= 15 then                'CM Fresh Food Counters'        -- Override Manager Resp to Fresh Food Counters
-             when SKU >=235 and sku<= 249 then  'CM Fresh Food Counters'		-- Override Manager Resp to Fresh Food Counters
-             when SKU >=19 and sku<= 25 then    'CM Household Counters'			-- Override Manager Resp to Household Counters
-             when SKU >=66 and sku<= 67 then    'CM Household Counters'			-- Override Manager Resp to Household Counters
-             when SKU >=55 and sku<= 65 then    'CM Produce Threshold'			-- Override Manager Resp to Produce
-             when SKU >=71 and sku<= 78 then    'CM Produce Threshold'			-- Override Manager Resp to Produce
-             when SKU >=80 and sku<= 82 then    'CM Produce Threshold'			-- Override Manager Resp to Produce
-             when SKU >=260 and sku<= 337 then  'CM Packaged & Speciality'		-- Override Manager Resp to CAP
-             when sku >=205 and sku <=216 then  'CM Meat  Fish & Poultry'       -- Override Manager Resp to MFP
-             when SKU in (222,223) then         'CM Beers  Wines & Spirits'     -- Override Manager Resp to BWS
-             when SKU >=338 and sku<= 340 then  'CM Frozen Food'				-- Override Manager Resp to Frozen Food
-             when SKU >=26 and sku<= 28 then    'CM Health & Beauty' 			-- Override Manager Resp to H&B
-             when SKU >=29 and sku<= 33 then    'CM Health & Beauty' 			-- Override Manager Resp to H&B
-             when SKU >=34 and sku<= 38 then    'CM Meal Solutions'             -- Override Manager Resp to Meal Solutions
-             when SKU >=89 and sku<= 91 then    'CM Meal Solutions'				-- Override Manager Resp to Meal Solutions
-             when sku > 340 then manager_resp end as manager_resp,
-
-        case when SKU = 1 then 2										        -- Override ASP to spend threshold --
-	         when SKU = 2 then 4
-             when SKU = 3 then 6
-             when SKU = 4 then 1.5
-             when SKU = 5 then 2.5
-             when SKU = 6 then 3.5
-             when SKU = 7 then 3
-             when SKU = 8 then 5
-             when SKU = 9 then 7
-             when SKU = 10 then 3
-             when SKU = 11 then 5
-             when SKU = 12 then 7
-             when SKU = 13 then 1
-             when SKU = 14 then 1.5
-             when SKU = 15 then 2
-
---              when SKU = 236 then 4
---              when SKU = 237 then 6
---              when SKU = 238 then 1.5
---              when SKU = 240 then 3.5
---              when SKU = 243 then 7
---              when SKU = 244 then 3
---              when SKU = 245 then 5
-             when SKU = 247 then 1
-             when SKU = 248 then 1.5
-             when SKU = 249 then 2
-
-             when SKU = 16 then 4
-             when SKU = 17 then 6
-             when SKU = 18 then 8
-             when SKU = 19 then 10
-             when SKU = 20 then 12.5
-             when SKU = 21 then 15
-             when SKU = 22 then 20
-             when SKU = 23 then 25
-             when SKU = 24 then 30
-             when SKU = 25 then 35
-             when SKU = 66 then 5
-             when SKU = 67 then 7.5
-
-             when SKU = 55 then 2
-             when SKU = 56 then 2
-             when SKU = 57 then 2
-             when SKU = 58 then 3
-             when SKU = 59 then 2
-             when SKU = 60 then 3
-             when SKU = 61 then 2
-             when SKU = 62 then 2
-             when SKU = 63 then 2
-             when SKU = 64 then 2
-             when SKU = 65 then 3
-             when SKU >= 71 and SKU <= 73 then 4
-             when SKU = 74 then 5
-             when SKU >= 75 and SKU <= 78 then 4
-             when SKU >= 80 and SKU <= 81 then 4
-             when SKU = 82 then 5
-
-             when sku >= 205 and sku <= 216 then 1.174946372000
-
-             when SKU=260 then 4
-             when SKU=261 then 3
-             when SKU=262 then 2
-             when SKU=263 then 4.25
-             when SKU=264 then 3.25
-             when SKU=265 then 2.5
-             when SKU=266 then 5
-             when SKU=267 then 4
-             when SKU=268 then 2.75
-             when SKU=269 then 3
-             when SKU=270 then 2.5
-             when SKU=271 then 1.75
-             when SKU=272 then 3
-             when SKU=273 then 2.5
-             when SKU=274 then 2
-             when SKU=275 then 3.5
-             when SKU=276 then 2.5
-             when SKU=277 then 1.75
-             when SKU=278 then 3
-             when SKU=279 then 2.5
-             when SKU=280 then 2
-             when SKU=281 then 5.25
-             when SKU=282 then 4
-             when SKU=283 then 3.25
-             when SKU=284 then 2.75
-             when SKU=285 then 2.25
-             when SKU=286 then 1.7
-             when SKU=287 then 3.5
-             when SKU=288 then 2.5
-             when SKU=289 then 4.25
-             when SKU=290 then 4
-             when SKU=291 then 3.25
-             when SKU=292 then 3.25
-             when SKU=293 then 2.75
-             when SKU=294 then 2.25
-             when SKU=295 then 3.25
-             when SKU=296 then 2.6
-             when SKU=297 then 2
-             when SKU=298 then 2.5
-             when SKU=299 then 1.75
-             when SKU=300 then 1.5
-             when SKU=301 then 2.5
-             when SKU=302 then 2
-             when SKU=303 then 4.5
-             when SKU=304 then 5.5
-             when SKU=305 then 3.75
-             when SKU=306 then 2.75
-             when SKU=307 then 5
-             when SKU=308 then 4
-             when SKU=309 then 3
-             when SKU=310 then 2.75
-             when SKU=311 then 1.75
-             when SKU=312 then 6.5
-             when SKU=313 then 5
-             when SKU=314 then 4.5
-             when SKU=315 then 4
-             when SKU=316 then 3
-             when SKU=317 then 3.5
-             when SKU=318 then 2.75
-             when SKU=319 then 1.75
-             when SKU=320 then 3.75
-             when SKU=321 then 3
-             when SKU=322 then 2.25
-             when SKU=323 then 4
-             when SKU=324 then 1.5
-             when SKU=325 then 5
-             when SKU=326 then 2.75
-             when SKU=327 then 7.25
-             when SKU=328 then 5.25
-             when SKU=329 then 4.25
-             when SKU=330 then 5
-             when SKU=331 then 4
-             when SKU=332 then 4.75
-             when SKU=333 then 3.75
-             when SKU=334 then 3
-             when SKU=335 then 3
-             when SKU=336 then 3
-             when SKU=337 then 2
-
-             when SKU = 205 then 4.5
-             when SKU = 206 then 3
-             when SKU = 207 then 2.5
-             when SKU = 208 then 7
-             when SKU = 209 then 5
-             when SKU = 210 then 4
-             when SKU = 211 then 6
-             when SKU = 212 then 4.5
-             when SKU = 213 then 3.5
-             when SKU = 214 then 12
-             when SKU = 215 then 9
-             when SKU = 216 then 5
-
-             when SKU = 222 then 60
-             when SKU = 223 then 20
-
-             when SKU = 338 then 7.5
-             when SKU = 339 then 5
-             when SKU = 340 then 3.5
-
-             when SKU = 26 then 7.5
-             when SKU = 27 then 12
-             when SKU = 28 then 17.5
-             when SKU = 29 then 5
-             when SKU = 30 then 7.5
-             when SKU = 31 then 10
-             when SKU = 32 then 12.5
-             when SKU = 33 then 15
-
-             when SKU = 34 then 5
-             when SKU = 35 then 7.5
-             when SKU = 36 then 10
-             when SKU = 37 then 12.5
-             when SKU = 38 then 15
-
-             when SKU = 89 then 2.5
-             when SKU = 90 then 3
-             when SKU = 91 then 4
-
-             when sku > 340 then asp end as asp
+            when sku > 1000 then asp end as asp
     from addaspmargin;
 
 -- check whether any margins need to be added manually --
@@ -426,6 +475,7 @@ select distinct sku from addcountermanager
 where margin is null
 or manager_resp is null
 or asp is null
+order by sku
 ;
 
 -- Margin adjustment to be in line with finance, need to subtract 11.02% from margin
@@ -437,6 +487,7 @@ from addcountermanager;
 create or replace temp table addcountermanager as
     select sr_id, sku_rank, sku, points, pounds, offer_type, adjusted_margin as margin, manager_resp, asp
 from margin_adjustment;
+
 
 ------------------------------------------------------------------------------------------------------------------------
 ---- CODE FROM HERE IS ORGINAL BUDGET CODE. THIS CREATES RAW DATA TO USE FOR THE BUDGETS BASED ON THE ABOVE DATASET ----
@@ -689,10 +740,10 @@ create or replace temp table distribution
 insert into distribution
 values (1, 0.50, 0.05, 0.05),
        (2, 0.86, 0.34, 0.34),
-       (3, 1, 0.64, 0.62),
-       (4, 1, 0.87, 0.87);
---        (5, 1, 0.97, 0.98),
---        (6, 1, 1, 1);
+       (3, 0.98, 0.64, 0.62),
+       (4, 1, 0.87, 0.87),
+       (5, 1, 0.97, 0.98),
+       (6, 1, 1, 1);
 
 select * from distribution;
 
@@ -704,10 +755,10 @@ union
 select 3 as week, a.* from Overall_budget2 a
 union
 select 4 as week, a.* from Overall_budget2 a
--- union
--- select 5 as week, a.* from Overall_budget2 a
--- union
--- select 6 as week, a.* from Overall_budget2 a;
+union
+select 5 as week, a.* from Overall_budget2 a
+union
+select 6 as week, a.* from Overall_budget2 a;
 
 select * from total_all;
 
@@ -730,7 +781,8 @@ select a.week,
        JS_profitS / total_costSS                      as js_roiS,
        redemptionsS / printsS                         as redemption_rateS,
        total_costSS / redemptionsS                    as cost_per_redemptionS,
-       target_sales_upliftS / redemptionsS            as uplift_per_redemptionS
+       target_sales_upliftS / redemptionsS            as uplift_per_redemptionS,
+       margin
 from total_all a
          left join distribution b
                    on a.week = b.week;
@@ -753,7 +805,8 @@ select week,
        js_roiS                 as js_roi,
        redemption_rateS        as redemption_rate,
        cost_per_redemptionS    as cost_per_redemption,
-       uplift_per_redemptionS  as uplift_per_redemption
+       uplift_per_redemptionS  as uplift_per_redemption,
+margin
 from Phased_Budget_Final;
 
 -- EXPORT FILES TO EXCEL WORKBOOK IN DIFFERENT SHEETS - USING THE EXPORT BUTTON ON THE BOTTOM RIGHT HAND CORNER --
@@ -854,6 +907,6 @@ select * from  phased_budget_repo;
 insert into PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY
 select * from phased_budget_repo;
 
--- select * from PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY where CAMPAIGN_CODE = 'X01232';
+select * from PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY where CAMPAIGN_CODE = $CampaignName;
 
--- delete from PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY where CAMPAIGN_CODE = 'X01232';
+-- delete from PRODUCT_REPORTING.PRODUCT_BUDGET_REPOSITORY where CAMPAIGN_CODE = $CampaignName;
